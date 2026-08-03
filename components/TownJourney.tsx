@@ -114,6 +114,7 @@ export function TownJourney({
 }: TownJourneyProps) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [activeSegmentIndex, setActiveSegmentIndex] = useState(0)
+  const [isEnhanced, setIsEnhanced] = useState(false)
   const [hasPassedFirstViewport, setHasPassedFirstViewport] = useState(false)
   const [reducedMotion, setReducedMotion] = useState<boolean | null>(null)
   const journeyRef = useRef<HTMLElement>(null)
@@ -121,6 +122,7 @@ export function TownJourney({
   const navRefs = useRef<Array<HTMLButtonElement | null>>([])
   const activeIndexRef = useRef(0)
   const activeSegmentIndexRef = useRef(0)
+  const isEnhancedRef = useRef(false)
   const hasPassedFirstViewportRef = useRef(false)
   const frameRef = useRef<number | null>(null)
   const targetProgressRef = useRef(0)
@@ -256,6 +258,11 @@ export function TownJourney({
       scene.style.setProperty('--scene-shift', `${sceneShift.toFixed(2)}px`)
       scene.style.setProperty('--product-shift', `${productShift.toFixed(2)}px`)
     })
+
+    if (!isEnhancedRef.current) {
+      isEnhancedRef.current = true
+      setIsEnhanced(true)
+    }
 
     if (
       !suppressJourneyEventsRef.current
@@ -504,6 +511,7 @@ export function TownJourney({
       style={journeyStyle}
       aria-label="玛卡小镇角色旅程"
       data-active-chapter={chapters[activeIndex].id}
+      data-enhanced={isEnhanced || reducedMotion === true ? 'true' : 'false'}
       data-reduced-motion={reducedMotion === true ? 'true' : 'false'}
     >
       <div className={styles.stage}>
@@ -517,12 +525,12 @@ export function TownJourney({
         <div className={styles.sceneStack}>
           {chapters.map((chapter, index) => {
             const isActive = index === activeIndex
-            const isHidden = reducedMotion !== true && !isActive
+            const isHidden = reducedMotion === false && !isActive
             const robot = chapter.robotId
               ? robots.find((item) => item.id === chapter.robotId)
               : undefined
             const shouldRenderMedia =
-              reducedMotion === true || Math.abs(index - activeIndex) <= 1
+              reducedMotion !== false || Math.abs(index - activeIndex) <= 1
 
             return (
               <article

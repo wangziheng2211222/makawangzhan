@@ -1,5 +1,6 @@
 .journey {
   position: relative;
+  height: calc(var(--journey-scroll-units) * 100vh + 100vh);
   height: calc(var(--journey-scroll-units) * 100svh + 100svh);
   background: var(--color-page);
   --town-space-phase: 1;
@@ -16,6 +17,7 @@
   top: 0;
   isolation: isolate;
   width: 100%;
+  height: 100vh;
   height: 100svh;
   overflow: hidden;
   background: var(--color-white);
@@ -335,6 +337,38 @@
   font-weight: 780;
 }
 
+.journey[data-enhanced='false'] {
+  height: auto;
+}
+
+.journey[data-enhanced='false'] .stage,
+.journey[data-enhanced='false'] .sceneStack,
+.journey[data-enhanced='false'] .scene {
+  position: relative;
+  inset: auto;
+  height: auto;
+}
+
+.journey[data-enhanced='false'] .stage {
+  overflow: visible;
+}
+
+.journey[data-enhanced='false'] .videoStack,
+.journey[data-enhanced='false'] .chapterNav {
+  display: none;
+}
+
+.journey[data-enhanced='false'] .scene {
+  min-height: 100vh;
+  min-height: 100svh;
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.journey[data-enhanced='false'] .copy {
+  opacity: 1;
+}
+
 @media (max-width: 980px) and (min-width: 801px) {
   .copy h1 {
     font-size: 58px;
@@ -360,6 +394,7 @@
     right: 10vw;
     bottom: auto;
     width: 80vw;
+    height: 48vh;
     height: 48svh;
   }
 
@@ -538,6 +573,7 @@
   }
 
   .scene {
+    min-height: 100vh;
     min-height: 100svh;
     pointer-events: auto;
     opacity: 1;
