@@ -56,8 +56,8 @@ function SceneLayer({
   const isTown = chapter.id === 'town' || chapter.id === 'reunion'
   const alt = chapter.id === 'town'
     ? '从太空看向地球，玛卡小镇的旅程即将开始'
-    : isTown
-      ? '玛卡小镇全景，四位机器人围在喷泉旁'
+    : chapter.id === 'reunion'
+      ? '黑夜中的玛卡小镇，萤火虫在喷泉与树丛间飞舞'
     : `${chapter.title}机器人`
 
   if (!isTown && robot && chapter.environmentDesktop && chapter.environmentMobile) {
@@ -129,6 +129,7 @@ export function TownJourney({
   const scrubCallbackRef = useRef<(timestamp: number) => void>(() => undefined)
   const suppressJourneyEventsRef = useRef(false)
   const videoRefs = useRef(new Map<string, HTMLVideoElement>())
+  const ambientVideoRef = useRef<HTMLVideoElement | null>(null)
   const userReadyRef = useRef(false)
   const totalScrollWeight = useMemo(
     () => segments.reduce((total, segment) => total + segment.scrollWeight, 0),
@@ -172,6 +173,14 @@ export function TownJourney({
       }
       videoRefs.current.set(segmentId, video)
       if (userReadyRef.current) primeVideo(video)
+    },
+    [primeVideo],
+  )
+
+  const registerAmbientVideo = useCallback(
+    (video: HTMLVideoElement | null) => {
+      ambientVideoRef.current = video
+      if (video && userReadyRef.current) primeVideo(video)
     },
     [primeVideo],
   )
@@ -224,6 +233,25 @@ export function TownJourney({
         }
       }
     })
+
+    const ambientVideo = ambientVideoRef.current
+    const ambientOpacity = segment.id === 'dive-reunion'
+      ? clamp(journeyFrame.localProgress / 0.08)
+      : 0
+    if (ambientVideo) {
+      ambientVideo.style.opacity = ambientOpacity.toFixed(4)
+      if (ambientOpacity > 0.001) {
+        if (ambientVideo.paused) {
+          ambientVideo.currentTime = 0
+          ambientVideo.play().catch(() => undefined)
+        }
+      } else {
+        ambientVideo.pause()
+        if (ambientVideo.readyState >= 1 && ambientVideo.currentTime > 0) {
+          ambientVideo.currentTime = 0
+        }
+      }
+    }
 
     journeyFrame.chapters.forEach((chapterFrame, index) => {
       const scene = sceneRefs.current[index]
@@ -346,6 +374,7 @@ export function TownJourney({
       if (userReadyRef.current) return
       userReadyRef.current = true
       videoRefs.current.forEach(primeVideo)
+      if (ambientVideoRef.current) primeVideo(ambientVideoRef.current)
     }
 
     window.addEventListener('pointerdown', handleFirstGesture, { once: true, passive: true })
@@ -398,6 +427,13 @@ export function TownJourney({
       video.load()
     })
     videoRefs.current.clear()
+    const ambientVideo = ambientVideoRef.current
+    if (ambientVideo) {
+      ambientVideo.pause()
+      ambientVideo.removeAttribute('src')
+      ambientVideo.load()
+    }
+    ambientVideoRef.current = null
   }, [])
 
   useEffect(() => {
@@ -492,9 +528,11 @@ export function TownJourney({
         }]
       : []
   ))
-  const isChapterNavVisible = reducedMotion === true
+  const canShowChapterNav = reducedMotion === true
     ? activeIndex > 0
     : hasPassedFirstViewport
+  const isChapterNavVisible = canShowChapterNav
+    && chapters[activeIndex].id !== 'reunion'
 
   return (
     <section
@@ -512,6 +550,7 @@ export function TownJourney({
           activeSegmentIndex={activeSegmentIndex}
           reducedMotion={reducedMotion !== false}
           registerVideo={registerVideo}
+          registerAmbientVideo={registerAmbientVideo}
           onVideoTimingChange={requestJourneyUpdate}
         />
         <div className={styles.sceneStack}>
@@ -563,7 +602,13 @@ export function TownJourney({
                   ) : (
                     <h2 tabIndex={-1}>
                       {robot ? <span>{robot.englishName}</span> : null}
-                      {chapter.title}
+                      {chapter.id === 'reunion' ? (
+                        <>
+                          玛卡小镇
+                          <br />
+                          新成员陆续加入中
+                        </>
+                      ) : chapter.title}
                     </h2>
                   )}
                   {robot ? (
@@ -583,6 +628,8 @@ export function TownJourney({
                       aria-label={`查看${robot.name}详情`}
                       onClick={() => {
                         trackEvent('business_cta_click', {
+                          cta_id: `chapter_${robot.id}_detail`,
+                          cta_label: robot.ctaLabel,
                           robot_id: robot.id,
                           source: 'chapter',
                           destination: robot.ctaHref,
@@ -601,6 +648,8 @@ export function TownJourney({
                       aria-label="前往京东查看玛卡小镇详情"
                       onClick={() => {
                         trackEvent('business_cta_click', {
+                          cta_id: 'reunion_town_detail',
+                          cta_label: '查看详情',
                           source: 'reunion',
                           destination: JD_STORE_URL,
                         })

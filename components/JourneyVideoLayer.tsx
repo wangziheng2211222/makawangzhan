@@ -19,6 +19,7 @@ type JourneyVideoLayerProps = {
   activeSegmentIndex: number
   reducedMotion: boolean
   registerVideo: (segmentId: string, video: HTMLVideoElement | null) => void
+  registerAmbientVideo: (video: HTMLVideoElement | null) => void
   onVideoTimingChange: () => void
 }
 
@@ -124,11 +125,39 @@ function ManagedVideo({
   )
 }
 
+function ReunionAmbientVideo({
+  mobile,
+  registerAmbientVideo,
+}: {
+  mobile: boolean
+  registerAmbientVideo: JourneyVideoLayerProps['registerAmbientVideo']
+}) {
+  const source = `/media/journey/${mobile ? 'mobile' : 'desktop'}/reunion-loop.mp4`
+  const poster = `/images/scenes/reunion-night-${mobile ? 'mobile' : 'desktop'}.webp`
+
+  return (
+    <video
+      ref={registerAmbientVideo}
+      className={`${styles.journeyVideo} ${styles.reunionLoopVideo}`}
+      muted
+      loop
+      playsInline
+      preload="metadata"
+      poster={poster}
+      src={source}
+      aria-hidden="true"
+      tabIndex={-1}
+      data-segment-id="reunion-loop"
+    />
+  )
+}
+
 export function JourneyVideoLayer({
   segments,
   activeSegmentIndex,
   reducedMotion,
   registerVideo,
+  registerAmbientVideo,
   onVideoTimingChange,
 }: JourneyVideoLayerProps) {
   const [mobile, setMobile] = useState<boolean | null>(null)
@@ -178,6 +207,11 @@ export function JourneyVideoLayer({
           />
         )
       })}
+      <ReunionAmbientVideo
+        key={`reunion-loop-${mobile ? 'mobile' : 'desktop'}`}
+        mobile={mobile}
+        registerAmbientVideo={registerAmbientVideo}
+      />
     </div>
   )
 }

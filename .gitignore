@@ -37,3 +37,6 @@ yarn-error.log*
 
 # local media generation state
 /.maka-media
+
+# local analytics data
+/.data

@@ -47,6 +47,10 @@
   opacity: 0;
 }
 
+.reunionLoopVideo {
+  z-index: 2;
+}
+
 .sceneStack {
   z-index: 2;
 }
@@ -188,11 +192,18 @@
 }
 
 .townCopy::before {
-  opacity: calc(1 - var(--town-space-phase));
+  display: none;
 }
 
 .reunionCopy::before {
   display: none;
+}
+
+.copy.reunionCopy h2 {
+  max-width: none;
+  color: var(--color-white);
+  text-shadow: 0 3px 24px rgb(2 8 28 / 45%);
+  white-space: nowrap;
 }
 
 .copy h1,
@@ -399,6 +410,15 @@
 
   .robotCopy {
     bottom: max(44px, calc(env(safe-area-inset-bottom) + 40px));
+  }
+
+  .reunionCopy {
+    top: clamp(108px, 16vh, 168px);
+    bottom: auto;
+  }
+
+  .copy.reunionCopy h2 {
+    font-size: 32px;
   }
 
   .copy::before {

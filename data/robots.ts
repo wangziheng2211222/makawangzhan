@@ -87,9 +87,9 @@ export const robots: RobotProfile[] = [
   },
 ]
 
-const townPosterDesktop = scenePath('town-hero-desktop-preview.webp')
-const townPosterMobile = scenePath('town-hero-mobile-preview.webp')
-const townCloudsPosterDesktop = scenePath('town-clouds-desktop.webp')
+const reunionPosterDesktop = scenePath('reunion-night-desktop.webp')
+const reunionPosterMobile = scenePath('reunion-night-mobile.webp')
+const townOpeningPosterDesktop = scenePath('town-opening-desktop.webp')
 const townCloudsPosterMobile = scenePath('town-clouds-mobile.webp')
 
 export const chapters: JourneyChapter[] = [
@@ -98,7 +98,7 @@ export const chapters: JourneyChapter[] = [
     name: '小镇',
     title: '玛卡小镇',
     accent: '#596cf5',
-    posterDesktop: townCloudsPosterDesktop,
+    posterDesktop: townOpeningPosterDesktop,
     posterMobile: townCloudsPosterMobile,
     scrollWeight: 1.55,
     linger: 0.45,
@@ -121,10 +121,9 @@ export const chapters: JourneyChapter[] = [
     id: 'reunion',
     name: '诗和远方',
     title: '玛卡小镇新成员陆续加入中',
-    description: '更多伙伴正在赶来，敬请期待。',
     accent: '#8a63f6',
-    posterDesktop: townPosterDesktop,
-    posterMobile: townPosterMobile,
+    posterDesktop: reunionPosterDesktop,
+    posterMobile: reunionPosterMobile,
     scrollWeight: 1.55,
     linger: 0.45,
   },

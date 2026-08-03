@@ -34,7 +34,15 @@
       "id": "dive-town",
       "kind": "dive-in",
       "promptFile": "media/prompts/dive-town.md",
-      "sourceStatus": "ai-native-planet-to-town-entry",
+      "sourceStatus": "desktop-reframed-from-mobile-fixed-scene",
+      "desktopOpening": {
+        "method": "deterministic-dynamic-crop-and-scale",
+        "source": "public/media/journey/mobile/dive-town.mp4",
+        "crop": "1080x608, y=min(800,500+60*t)",
+        "output": "1920x1080",
+        "firstFrame": "output/desktop-mobile-reference-opening/desktop-fixed-scene-first.png",
+        "geometryPolicy": "source-frames-only-no-generative-interpolation"
+      },
       "inputFrames": {
         "desktop": {
           "first": "output/video/candidates/town-planet-entry-v2/inputs/desktop-planet-approach.png"
@@ -54,7 +62,7 @@
         ]
       },
       "source": {
-        "desktop": "public/images/scenes/town-clouds-desktop.webp",
+        "desktop": "public/images/scenes/town-opening-desktop.webp",
         "mobile": "public/images/scenes/town-clouds-mobile.webp"
       }
     },
@@ -144,25 +152,54 @@
       "id": "connector-pipi-to-reunion",
       "kind": "connector",
       "promptFile": "media/prompts/connector-pipi-to-reunion.md",
+      "sourceStatus": "ai-generated-day-to-night-transition",
       "from": "dive-pipi",
-      "to": "dive-reunion"
+      "to": "dive-reunion",
+      "durationSeconds": 6,
+      "inputFrames": {
+        "desktop": {
+          "first": "output/reunion-night-v2/share/pipi-last-desktop.png",
+          "last": "output/reunion-night-v2/night-desktop.bin"
+        },
+        "mobile": {
+          "first": "output/reunion-night-v2/share/pipi-last-mobile.png",
+          "last": "output/reunion-night-v2/night-mobile.bin"
+        }
+      },
+      "taskIds": {
+        "desktop": "872270185704812544",
+        "mobile": "872270185998417920"
+      }
     },
     {
       "id": "dive-reunion",
       "kind": "dive-in",
-      "promptFile": "media/prompts/dive-reunion.md",
-      "sourceStatus": "clear-static-hold",
-      "postProcessing": {
-        "sourceFrame": {
-          "desktop": ".maka-media/boundaries/1080p/desktop/dive-reunion-first.png",
-          "mobile": ".maka-media/boundaries/1080p/mobile/dive-reunion-first.png"
-        },
-        "method": "repeat-decoded-first-frame-with-constant-qp-4",
-        "gop": 24
-      },
+      "promptFile": "media/prompts/reunion-night-loop.md",
+      "sourceStatus": "ai-generated-night-ambient-loop",
+      "durationSeconds": 6,
       "source": {
-        "desktop": "public/images/scenes/town-hero-desktop-preview.webp",
-        "mobile": "public/images/scenes/town-hero-mobile-preview.webp"
+        "desktop": "public/images/scenes/reunion-night-desktop.webp",
+        "mobile": "public/images/scenes/reunion-night-mobile.webp"
+      }
+    }
+  ],
+  "ambientLoops": [
+    {
+      "id": "reunion-loop",
+      "promptFile": "media/prompts/reunion-night-loop.md",
+      "sourceStatus": "ai-generated-seamless-ambient-loop",
+      "durationSeconds": 6,
+      "taskIds": {
+        "desktop": "872262416029286400",
+        "mobile": "872262416440332288"
+      },
+      "poster": {
+        "desktop": "public/images/scenes/reunion-night-desktop.webp",
+        "mobile": "public/images/scenes/reunion-night-mobile.webp"
+      },
+      "video": {
+        "desktop": "public/media/journey/desktop/reunion-loop.mp4",
+        "mobile": "public/media/journey/mobile/reunion-loop.mp4"
       }
     }
   ]

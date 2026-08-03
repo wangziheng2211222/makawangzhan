@@ -82,6 +82,8 @@ export const RobotChooser = forwardRef<HTMLHeadingElement, RobotChooserProps>(
                       aria-label={`查看${robot.name}详情`}
                       onClick={() => {
                         trackEvent('business_cta_click', {
+                          cta_id: `chooser_${robot.id}_detail`,
+                          cta_label: robot.ctaLabel,
                           robot_id: robot.id,
                           source: 'chooser',
                           destination: robot.ctaHref,
