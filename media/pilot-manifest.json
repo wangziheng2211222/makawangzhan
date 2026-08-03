@@ -1,0 +1,85 @@
+{
+  "version": 1,
+  "project": "maka-town-scroll-pilot",
+  "supplier": "ai-platform-jieyun-seedance",
+  "supplierContractStatus": "pilot-task-tracked",
+  "priceSnapshot": null,
+  "tasks": [
+    {
+      "id": "dive-town",
+      "kind": "dive-in",
+      "aspectRatio": "16:9",
+      "width": 1280,
+      "height": 720,
+      "codec": "h264",
+      "gop": 8,
+      "audio": false,
+      "promptFile": "media/prompts/dive-town.md",
+      "referenceImages": ["public/images/scenes/town-hero-desktop-preview.webp"],
+      "referenceStatus": "preview-source-used",
+      "dependsOn": [],
+      "output": "public/media/pilot/dive-town.mp4",
+      "generation": {
+        "status": "complete",
+        "taskId": "871073654846840832",
+        "model": "doubao-seedance-2-0-260128",
+        "useTokens": 108900,
+        "requestedDurationSeconds": 5,
+        "actualDurationSeconds": 5.042,
+        "actualFps": 24,
+        "providerGop": 121,
+        "publishedGop": 8,
+        "outputSha256": "4f609949dd9eccde87756ed5c17305dc2b5cf4286a2b432d743304256d495d0c",
+        "lastFrame": ".maka-media/frames/dive-town-last.png",
+        "lastFrameSha256": "9beed47714afe07e812c90e58aedb7186fed5f62623c9247197222567911009b"
+      },
+      "review": {
+        "scrollPreview": "approved",
+        "production": "rejected",
+        "reason": "Character identity and facial details drift across the shot."
+      }
+    },
+    {
+      "id": "dive-jiuka",
+      "kind": "dive-in",
+      "aspectRatio": "16:9",
+      "width": 1280,
+      "height": 720,
+      "codec": "h264",
+      "gop": 8,
+      "audio": false,
+      "promptFile": "media/prompts/dive-jiuka.md",
+      "referenceImages": [
+        "public/images/scenes/jiuka-environment-desktop.webp",
+        "public/images/products/jiuka-cutout.webp"
+      ],
+      "referenceStatus": "requires-high-resolution-approval",
+      "dependsOn": [],
+      "output": "public/media/pilot/dive-jiuka.mp4",
+      "generation": {
+        "status": "not-submitted"
+      }
+    },
+    {
+      "id": "connector-town-to-jiuka",
+      "kind": "connector",
+      "aspectRatio": "16:9",
+      "width": 1280,
+      "height": 720,
+      "codec": "h264",
+      "gop": 8,
+      "audio": false,
+      "promptFile": "media/prompts/connector-town-to-jiuka.md",
+      "referenceImages": [
+        ".maka-media/frames/dive-town-last.png",
+        ".maka-media/frames/dive-jiuka-first.png"
+      ],
+      "referenceStatus": "blocked-until-real-boundary-frames-exist",
+      "dependsOn": ["dive-town", "dive-jiuka"],
+      "output": "public/media/pilot/connector-town-to-jiuka.mp4",
+      "generation": {
+        "status": "blocked"
+      }
+    }
+  ]
+}

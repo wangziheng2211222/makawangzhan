@@ -1,0 +1,41 @@
+{
+  "sourceDirectory": "/Users/wzzz/Documents/玛卡形象官网",
+  "usage": "image-generation-reference-only",
+  "assets": [
+    {
+      "id": "maka-town",
+      "path": "/Users/wzzz/Documents/玛卡形象官网/玛卡小镇.png",
+      "width": 1256,
+      "height": 1256,
+      "sha256": "a8125a23a5a5f6b54e6691fbd565163ea949a14deb944f09b429412522ab2abc"
+    },
+    {
+      "id": "jiuka",
+      "path": "/Users/wzzz/Documents/玛卡形象官网/啾咔.png",
+      "width": 2187,
+      "height": 2187,
+      "sha256": "0112e05b04849e941658d7122dd8dba39c82add234bda90d7c77f6e50119dc43"
+    },
+    {
+      "id": "bobby",
+      "path": "/Users/wzzz/Documents/玛卡形象官网/小恶魔.png",
+      "width": 1778,
+      "height": 2368,
+      "sha256": "325ae127773e76db67ec94a1de06f7b1f7194cdf14389bde2a2c538c8cc71145"
+    },
+    {
+      "id": "gee-too",
+      "path": "/Users/wzzz/Documents/玛卡形象官网/机车兔.png",
+      "width": 240,
+      "height": 378,
+      "sha256": "d6b838f01296c5d6c8560b3281fd795e618adae12cde17f55c918f5f14a5a90c"
+    },
+    {
+      "id": "pipi",
+      "path": "/Users/wzzz/Documents/玛卡形象官网/屁屁.png",
+      "width": 240,
+      "height": 240,
+      "sha256": "5bf8c431d5e1f895b3120f8e7310e8884af48d53bf83869b39d394a7cf4cd881"
+    }
+  ]
+}

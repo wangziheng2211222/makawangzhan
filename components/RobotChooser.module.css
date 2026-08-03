@@ -1,0 +1,218 @@
+.chooser {
+  position: relative;
+  z-index: 5;
+  padding: 112px max(24px, 4vw) 96px;
+  background:
+    linear-gradient(180deg, var(--color-page) 0%, #ffffff 32%, #ffffff 100%);
+}
+
+.headingRow {
+  display: block;
+  max-width: 1380px;
+  margin: 0 auto 48px;
+}
+
+.headingRow h2 {
+  max-width: 11ch;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 64px;
+  line-height: 1.04;
+  letter-spacing: 0;
+}
+
+.headingRow p {
+  max-width: 32em;
+  margin: 20px 0 0;
+  color: var(--color-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.robotGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 1380px;
+  margin: 0 auto;
+}
+
+.robotCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  background: var(--color-white);
+  content-visibility: auto;
+  contain-intrinsic-size: 360px 580px;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.nameRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.robotCard:hover {
+  transform: translateY(-3px);
+}
+
+.imageFrame {
+  position: relative;
+  aspect-ratio: 1 / 1.06;
+  padding: 16px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--robot-accent) 9%, var(--color-white));
+}
+
+.imageFrame img {
+  padding: 13%;
+  transition: transform 220ms ease;
+}
+
+.robotCard:hover .imageFrame img {
+  transform: scale(1.025);
+}
+
+.cardBody {
+  min-height: 172px;
+  padding: 24px;
+}
+
+.cardBody h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.availability {
+  margin: 9px 0 0;
+  color: var(--color-muted);
+  font-size: 12px;
+}
+
+.englishName {
+  margin: 7px 0 0;
+  color: var(--robot-accent);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.archetype {
+  margin: 18px 0 0;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 720;
+  line-height: 1.5;
+}
+
+.details {
+  display: grid;
+  gap: 10px;
+  margin: 24px 0 0;
+}
+
+.details div {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+}
+
+.details dt,
+.details dd {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.storyDetails {
+  margin-top: 20px;
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.storyDetails summary {
+  padding: 16px 0 2px;
+  color: var(--color-ink);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.storyDetails p {
+  margin: 12px 0 0;
+}
+
+.details dt {
+  color: var(--color-muted);
+}
+
+.detailLink {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 22px;
+  border: 1px solid var(--color-ink);
+  border-radius: 8px;
+  color: var(--color-white);
+  background: var(--color-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.detailLink:hover {
+  border-color: var(--color-primary-hover);
+  color: var(--color-white);
+  background: var(--color-primary-hover);
+}
+
+@media (max-width: 1050px) {
+  .robotGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .chooser {
+    padding: 88px 20px 92px;
+  }
+
+  .headingRow {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    margin-bottom: 38px;
+  }
+
+  .headingRow h2 {
+    max-width: 10ch;
+    font-size: 44px;
+    line-height: 1.08;
+  }
+
+  .robotGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .imageFrame {
+    aspect-ratio: 1 / 0.9;
+  }
+
+  .cardBody {
+    min-height: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .imageFrame img,
+  .robotCard {
+    transition: none;
+  }
+}

@@ -1,0 +1,104 @@
+:root {
+  --color-ink: #171923;
+  --color-muted: #666b79;
+  --color-subtle: #858a99;
+  --color-line: #dfe2ef;
+  --color-white: #ffffff;
+  --color-page: #f3f5ff;
+  --color-lavender: #ddd0ff;
+  --color-blue: #596cf5;
+  --color-purple: #8a63f6;
+  --color-pink: #f4a7d8;
+  --color-mint: #8debc7;
+  --color-yellow: #ffd766;
+  --color-action: #596cf5;
+  --color-action-hover: #4659d8;
+  --color-primary: #24252a;
+  --color-primary-hover: #38393f;
+  --font-display: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-body: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-page);
+}
+
+body {
+  margin: 0;
+  color: var(--color-ink);
+  background: var(--color-page);
+  font-family: var(--font-body);
+  letter-spacing: 0;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active,
+a:active {
+  scale: 0.98;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+[tabindex]:not([tabindex='-1']):focus-visible {
+  outline: 3px solid var(--color-action);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--color-white);
+}
+
+[tabindex='-1']:focus {
+  outline: none;
+}
+
+::selection {
+  color: var(--color-ink);
+  background: var(--color-lavender);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
