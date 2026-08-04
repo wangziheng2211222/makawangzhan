@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import {
   type RefCallback,
   useCallback,
@@ -25,17 +26,21 @@ type JourneyVideoLayerProps = {
 
 type ManagedVideoProps = {
   segment: JourneyMediaSegment
+  mediaId: string
   active: boolean
   mobile: boolean
   registerVideo: JourneyVideoLayerProps['registerVideo']
+  onReadyChange: (mediaId: string, ready: boolean) => void
   onVideoTimingChange: JourneyVideoLayerProps['onVideoTimingChange']
 }
 
 function ManagedVideo({
   segment,
+  mediaId,
   active,
   mobile,
   registerVideo,
+  onReadyChange,
   onVideoTimingChange,
 }: ManagedVideoProps) {
   const directSource = mobile ? segment.videoMobile : segment.videoDesktop
@@ -51,6 +56,7 @@ function ManagedVideo({
     mountedRef.current = true
     return () => {
       mountedRef.current = false
+      onReadyChange(mediaId, false)
       abortControllerRef.current?.abort()
       const video = videoRef.current
       if (video) {
@@ -63,7 +69,15 @@ function ManagedVideo({
         objectUrlRef.current = null
       }
     }
-  }, [])
+  }, [mediaId, onReadyChange])
+
+  const setVideoReady = useCallback(
+    (nextReady: boolean) => {
+      setReady(nextReady)
+      onReadyChange(mediaId, nextReady)
+    },
+    [mediaId, onReadyChange],
+  )
 
   const setVideoRef: RefCallback<HTMLVideoElement> = useCallback(
     (video) => {
@@ -111,10 +125,10 @@ function ManagedVideo({
       tabIndex={-1}
       data-ready={ready ? 'true' : 'false'}
       data-segment-id={segment.id}
-      onLoadStart={() => setReady(false)}
+      onLoadStart={() => setVideoReady(false)}
       onLoadedMetadata={onVideoTimingChange}
       onLoadedData={() => {
-        setReady(true)
+        setVideoReady(true)
         onVideoTimingChange()
       }}
       onSeeked={onVideoTimingChange}
@@ -125,12 +139,21 @@ function ManagedVideo({
 
 function ReunionAmbientVideo({
   mobile,
+  mediaId,
   registerAmbientVideo,
+  onReadyChange,
 }: {
   mobile: boolean
+  mediaId: string
   registerAmbientVideo: JourneyVideoLayerProps['registerAmbientVideo']
+  onReadyChange: (mediaId: string, ready: boolean) => void
 }) {
   const source = `/media/journey/${mobile ? 'mobile' : 'desktop'}/reunion-loop.mp4`
+
+  useEffect(
+    () => () => onReadyChange(mediaId, false),
+    [mediaId, onReadyChange],
+  )
 
   return (
     <video
@@ -144,6 +167,8 @@ function ReunionAmbientVideo({
       aria-hidden="true"
       tabIndex={-1}
       data-segment-id="reunion-loop"
+      onLoadStart={() => onReadyChange(mediaId, false)}
+      onLoadedData={() => onReadyChange(mediaId, true)}
     />
   )
 }
@@ -158,6 +183,18 @@ export function JourneyVideoLayer({
 }: JourneyVideoLayerProps) {
   const [mobile, setMobile] = useState<boolean | null>(null)
   const [loadRemainingMedia, setLoadRemainingMedia] = useState(false)
+  const [readyMediaIds, setReadyMediaIds] = useState<Set<string>>(() => new Set())
+
+  const setMediaReady = useCallback((mediaId: string, ready: boolean) => {
+    setReadyMediaIds((current) => {
+      if (current.has(mediaId) === ready) return current
+
+      const next = new Set(current)
+      if (ready) next.add(mediaId)
+      else next.delete(mediaId)
+      return next
+    })
+  }, [])
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 800px)')
@@ -185,18 +222,61 @@ export function JourneyVideoLayer({
 
   if (reducedMotion === true) return null
 
-  const initialSegmentCount = Math.ceil(segments.length / 2)
+  const initialSegmentCount = Math.min(8, segments.length)
   const shouldLoadRemaining = loadRemainingMedia
     || activeSegmentIndex >= initialSegmentCount
   const segmentsToLoad = shouldLoadRemaining
     ? segments
     : segments.slice(0, initialSegmentCount)
+  const selectedFormat = mobile === true ? 'mobile' : 'desktop'
+  const getMediaId = (segmentId: string) => `${selectedFormat}:${segmentId}`
+  const hasSelectedSource = (segment: JourneyMediaSegment) => mobile !== null
+    && Boolean(mobile ? segment.videoMobile : segment.videoDesktop)
+  const initialMediaIds = segments
+    .slice(0, initialSegmentCount)
+    .filter(hasSelectedSource)
+    .map((segment) => getMediaId(segment.id))
+  const initialReadyCount = initialMediaIds.filter((id) => readyMediaIds.has(id)).length
+  const initialMediaReady = initialMediaIds.length > 0
+    && initialReadyCount === initialMediaIds.length
+  const loadingMediaIds = [
+    ...segmentsToLoad.filter(hasSelectedSource).map((segment) => getMediaId(segment.id)),
+    ...(shouldLoadRemaining ? [getMediaId('reunion-loop')] : []),
+  ]
+  const progressMediaIds = initialMediaReady ? loadingMediaIds : initialMediaIds
+  const readyCount = progressMediaIds.filter((id) => readyMediaIds.has(id)).length
+  const loadProgress = progressMediaIds.length > 0
+    ? Math.round((readyCount / progressMediaIds.length) * 100)
+    : 0
 
   return (
-    <div className={styles.videoStack}>
+    <div
+      className={styles.videoStack}
+      data-initial-media-ready={initialMediaReady ? 'true' : 'false'}
+    >
       <div className={styles.videoLoading} role="status" aria-live="polite">
-        <span className={styles.videoLoadingIndicator} aria-hidden="true" />
-        <span>画面加载中</span>
+        <Image
+          className={styles.videoLoadingLogo}
+          src="/images/brand/maka-planet-logo.png"
+          alt=""
+          width={1085}
+          height={450}
+          priority
+        />
+        <div
+          className={styles.videoLoadingTrack}
+          role="progressbar"
+          aria-label="画面加载进度"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={loadProgress}
+        >
+          <span
+            className={styles.videoLoadingProgress}
+            style={{ width: `${loadProgress}%` }}
+          />
+        </div>
+        <span className="srOnly">画面加载中，{loadProgress}%</span>
       </div>
       {mobile !== null ? (
         <>
@@ -208,9 +288,11 @@ export function JourneyVideoLayer({
               <ManagedVideo
                 key={`${segment.id}-${mobile ? 'mobile' : 'desktop'}`}
                 segment={segment}
+                mediaId={getMediaId(segment.id)}
                 active={index === activeSegmentIndex}
                 mobile={mobile}
                 registerVideo={registerVideo}
+                onReadyChange={setMediaReady}
                 onVideoTimingChange={onVideoTimingChange}
               />
             )
@@ -219,7 +301,9 @@ export function JourneyVideoLayer({
             <ReunionAmbientVideo
               key={`reunion-loop-${mobile ? 'mobile' : 'desktop'}`}
               mobile={mobile}
+              mediaId={getMediaId('reunion-loop')}
               registerAmbientVideo={registerAmbientVideo}
+              onReadyChange={setMediaReady}
             />
           ) : null}
         </>
