@@ -5,6 +5,7 @@ import {
   type RefCallback,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -196,7 +197,7 @@ export function JourneyVideoLayer({
     })
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 800px)')
     const sync = () => setMobile(mediaQuery.matches)
     sync()
