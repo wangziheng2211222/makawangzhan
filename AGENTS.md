@@ -53,7 +53,7 @@
 - `.coze` 配置中 run 命令使用 `${DEPLOY_RUN_PORT:-5000}` 提供端口默认值，确保部署环境变量未设置时仍能正常启动
 - 构建使用 `pnpm install && next build --webpack` 合并到 `package.json` 的 build 脚本中
   - `.coze` 中 deploy build 使用 `["pnpm", "run", "build"]` 简单数组格式，避免 shell 展开问题
-- run 命令使用 `node_modules/.bin/next` 替代 `npx`，避免 FaaS 环境中 npx 网络请求导致进程退出
+- run 命令使用 `pnpm start`，FaaS 环境自动设置 PORT 环境变量
 - run 命令添加 `-H 0.0.0.0` 绑定所有网卡，确保 FaaS 环境健康检查可达
 
 ## 安全注意事项
