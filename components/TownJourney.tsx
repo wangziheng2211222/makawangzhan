@@ -368,21 +368,14 @@ export function TownJourney({
   }, [])
 
   useEffect(() => {
-    if (reducedMotion !== false) return
-
-    const handleFirstGesture = () => {
-      if (userReadyRef.current) return
+    if (reducedMotion !== false) {
       userReadyRef.current = true
-      videoRefs.current.forEach(primeVideo)
-      if (ambientVideoRef.current) primeVideo(ambientVideoRef.current)
+      return
     }
 
-    window.addEventListener('pointerdown', handleFirstGesture, { once: true, passive: true })
-    window.addEventListener('touchstart', handleFirstGesture, { once: true, passive: true })
-    return () => {
-      window.removeEventListener('pointerdown', handleFirstGesture)
-      window.removeEventListener('touchstart', handleFirstGesture)
-    }
+    userReadyRef.current = true
+    videoRefs.current.forEach(primeVideo)
+    if (ambientVideoRef.current) primeVideo(ambientVideoRef.current)
   }, [primeVideo, reducedMotion])
 
   useEffect(() => {

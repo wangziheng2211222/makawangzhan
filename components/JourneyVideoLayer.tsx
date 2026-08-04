@@ -182,7 +182,7 @@ export function JourneyVideoLayer({
   onVideoTimingChange,
 }: JourneyVideoLayerProps) {
   const [mobile, setMobile] = useState<boolean | null>(null)
-  const [loadRemainingMedia, setLoadRemainingMedia] = useState(false)
+  const [loadRemainingMedia, setLoadRemainingMedia] = useState(true)
   const [readyMediaIds, setReadyMediaIds] = useState<Set<string>>(() => new Set())
 
   const setMediaReady = useCallback((mediaId: string, ready: boolean) => {
@@ -206,18 +206,7 @@ export function JourneyVideoLayer({
 
   useEffect(() => {
     if (reducedMotion === true || loadRemainingMedia) return
-
-    const loadRemaining = () => setLoadRemainingMedia(true)
-    window.addEventListener('scroll', loadRemaining, { once: true, passive: true })
-    window.addEventListener('pointerdown', loadRemaining, { once: true, passive: true })
-    window.addEventListener('touchstart', loadRemaining, { once: true, passive: true })
-    window.addEventListener('keydown', loadRemaining, { once: true })
-    return () => {
-      window.removeEventListener('scroll', loadRemaining)
-      window.removeEventListener('pointerdown', loadRemaining)
-      window.removeEventListener('touchstart', loadRemaining)
-      window.removeEventListener('keydown', loadRemaining)
-    }
+    // 所有视频在首次加载时立即开始加载，无需用户交互
   }, [loadRemainingMedia, reducedMotion])
 
   if (reducedMotion === true) return null
