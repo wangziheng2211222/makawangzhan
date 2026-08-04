@@ -14,8 +14,6 @@ import type { JourneyMediaSegment } from '@/types/robot'
 
 import styles from './TownJourney.module.css'
 
-const allowBlobFallback = process.env.NEXT_PUBLIC_VIDEO_BLOB_FALLBACK === 'true'
-
 type JourneyVideoLayerProps = {
   segments: JourneyMediaSegment[]
   activeSegmentIndex: number
@@ -45,11 +43,10 @@ function ManagedVideo({
   onVideoTimingChange,
 }: ManagedVideoProps) {
   const directSource = mobile ? segment.videoMobile : segment.videoDesktop
-  const [source, setSource] = useState(directSource)
+  const [source, setSource] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
   const objectUrlRef = useRef<string | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
-  const fallbackStartedRef = useRef(false)
   const mountedRef = useRef(true)
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
@@ -72,13 +69,41 @@ function ManagedVideo({
     }
   }, [mediaId, onReadyChange])
 
-  const setVideoReady = useCallback(
-    (nextReady: boolean) => {
-      setReady(nextReady)
-      onReadyChange(mediaId, nextReady)
-    },
-    [mediaId, onReadyChange],
-  )
+  // 强制使用 fetch 下载视频数据，绕过移动端浏览器忽略 preload="auto" 的问题
+  useEffect(() => {
+    if (!directSource) return
+    let cancelled = false
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
+    ;(async () => {
+      try {
+        const response = await fetch(directSource, { signal: controller.signal })
+        if (!response.ok) throw new Error(`Video request failed: ${response.status}`)
+        const blob = await response.blob()
+        if (cancelled || controller.signal.aborted) {
+          URL.revokeObjectURL(URL.createObjectURL(blob))
+          return
+        }
+        const objectUrl = URL.createObjectURL(blob)
+        if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current)
+        objectUrlRef.current = objectUrl
+        setSource(objectUrl)
+        // 通知进度：视频数据已下载，可以开始播放了
+        onReadyChange(mediaId, true)
+      } catch {
+        if (!cancelled) {
+          // 如果 fetch 失败，回退到直接使用原始 URL
+          setSource(directSource)
+        }
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [directSource, mediaId, onReadyChange])
 
   const setVideoRef: RefCallback<HTMLVideoElement> = useCallback(
     (video) => {
@@ -87,30 +112,6 @@ function ManagedVideo({
     },
     [registerVideo, segment.id],
   )
-
-  const loadBlobFallback = useCallback(async () => {
-    if (!directSource || fallbackStartedRef.current || source !== directSource) return
-    fallbackStartedRef.current = true
-    const controller = new AbortController()
-    abortControllerRef.current = controller
-
-    try {
-      const response = await fetch(directSource, { signal: controller.signal })
-      if (!response.ok) throw new Error(`Video request failed: ${response.status}`)
-      const blob = await response.blob()
-      const objectUrl = URL.createObjectURL(blob)
-      if (!mountedRef.current || controller.signal.aborted) {
-        URL.revokeObjectURL(objectUrl)
-        return
-      }
-      objectUrlRef.current = objectUrl
-      setSource(objectUrl)
-    } catch {
-      if (mountedRef.current && !controller.signal.aborted) {
-        fallbackStartedRef.current = false
-      }
-    }
-  }, [directSource, source])
 
   if (!source) return null
 
@@ -126,14 +127,12 @@ function ManagedVideo({
       tabIndex={-1}
       data-ready={ready ? 'true' : 'false'}
       data-segment-id={segment.id}
-      onLoadStart={() => setVideoReady(false)}
       onLoadedMetadata={onVideoTimingChange}
       onLoadedData={() => {
-        setVideoReady(true)
+        setReady(true)
         onVideoTimingChange()
       }}
       onSeeked={onVideoTimingChange}
-      onError={allowBlobFallback ? loadBlobFallback : undefined}
     />
   )
 }
