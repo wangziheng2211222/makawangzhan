@@ -51,7 +51,9 @@
 ## 部署注意事项
 - 使用 `production` 模式运行（`next start`），避免 Turbopack 开发模式兼容性问题
 - `.coze` 配置中 run 命令使用 `${DEPLOY_RUN_PORT:-5000}` 提供端口默认值，确保部署环境变量未设置时仍能正常启动
-- 构建使用 `bash -c "pnpm install && pnpm run build"` 确保 shell 操作符正确解析
+- 构建使用 `sh -c "pnpm install && pnpm run build"` 确保 shell 操作符正确解析（FaaS 环境无 bash，必须用 sh）
+- run 命令使用 `node_modules/.bin/next` 替代 `npx`，避免 FaaS 环境中 npx 网络请求导致进程退出
+- run 命令添加 `-H 0.0.0.0` 绑定所有网卡，确保 FaaS 环境健康检查可达
 
 ## 安全注意事项
 - 蝉镜视频 API 仅在开发环境可用，生产环境返回 404
