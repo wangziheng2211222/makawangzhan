@@ -40,3 +40,6 @@ yarn-error.log*
 
 # local analytics data
 /.data
+
+# Preview files
+.preview
