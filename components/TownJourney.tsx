@@ -229,7 +229,7 @@ export function TownJourney({
         try {
           video.currentTime = targetTime
         } catch {
-          // Keep the poster visible when a browser rejects an early seek.
+          // The next timing update retries seeks rejected before metadata is ready.
         }
       }
     })
@@ -548,7 +548,7 @@ export function TownJourney({
         <JourneyVideoLayer
           segments={segments}
           activeSegmentIndex={activeSegmentIndex}
-          reducedMotion={reducedMotion !== false}
+          reducedMotion={reducedMotion}
           registerVideo={registerVideo}
           registerAmbientVideo={registerAmbientVideo}
           onVideoTimingChange={requestJourneyUpdate}
@@ -560,8 +560,7 @@ export function TownJourney({
             const robot = chapter.robotId
               ? robots.find((item) => item.id === chapter.robotId)
               : undefined
-            const shouldRenderMedia =
-              reducedMotion === true || Math.abs(index - activeIndex) <= 1
+            const shouldRenderMedia = reducedMotion === true
 
             return (
               <article

@@ -17,7 +17,7 @@ const allowBlobFallback = process.env.NEXT_PUBLIC_VIDEO_BLOB_FALLBACK === 'true'
 type JourneyVideoLayerProps = {
   segments: JourneyMediaSegment[]
   activeSegmentIndex: number
-  reducedMotion: boolean
+  reducedMotion: boolean | null
   registerVideo: (segmentId: string, video: HTMLVideoElement | null) => void
   registerAmbientVideo: (video: HTMLVideoElement | null) => void
   onVideoTimingChange: () => void
@@ -39,7 +39,6 @@ function ManagedVideo({
   onVideoTimingChange,
 }: ManagedVideoProps) {
   const directSource = mobile ? segment.videoMobile : segment.videoDesktop
-  const poster = mobile ? segment.posterMobile : segment.posterDesktop
   const [source, setSource] = useState(directSource)
   const [ready, setReady] = useState(false)
   const objectUrlRef = useRef<string | null>(null)
@@ -106,8 +105,7 @@ function ManagedVideo({
       className={`${styles.journeyVideo} ${active ? styles.activeJourneyVideo : ''}`}
       muted
       playsInline
-      preload={active ? 'auto' : 'metadata'}
-      poster={poster}
+      preload="auto"
       src={source}
       aria-hidden="true"
       tabIndex={-1}
@@ -133,7 +131,6 @@ function ReunionAmbientVideo({
   registerAmbientVideo: JourneyVideoLayerProps['registerAmbientVideo']
 }) {
   const source = `/media/journey/${mobile ? 'mobile' : 'desktop'}/reunion-loop.mp4`
-  const poster = `/images/scenes/reunion-night-${mobile ? 'mobile' : 'desktop'}.webp`
 
   return (
     <video
@@ -142,8 +139,7 @@ function ReunionAmbientVideo({
       muted
       loop
       playsInline
-      preload="metadata"
-      poster={poster}
+      preload="auto"
       src={source}
       aria-hidden="true"
       tabIndex={-1}
@@ -161,7 +157,7 @@ export function JourneyVideoLayer({
   onVideoTimingChange,
 }: JourneyVideoLayerProps) {
   const [mobile, setMobile] = useState<boolean | null>(null)
-  const [mediaEnabled, setMediaEnabled] = useState(false)
+  const [loadRemainingMedia, setLoadRemainingMedia] = useState(false)
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 800px)')
@@ -172,46 +168,62 @@ export function JourneyVideoLayer({
   }, [])
 
   useEffect(() => {
-    if (reducedMotion) return
+    if (reducedMotion === true || loadRemainingMedia) return
 
-    const enableMedia = () => setMediaEnabled(true)
-    const idleCallback = window.requestIdleCallback?.(enableMedia, { timeout: 1500 })
-    const fallbackTimer = idleCallback === undefined
-      ? window.setTimeout(enableMedia, 800)
-      : undefined
-
-    window.addEventListener('scroll', enableMedia, { once: true, passive: true })
+    const loadRemaining = () => setLoadRemainingMedia(true)
+    window.addEventListener('scroll', loadRemaining, { once: true, passive: true })
+    window.addEventListener('pointerdown', loadRemaining, { once: true, passive: true })
+    window.addEventListener('touchstart', loadRemaining, { once: true, passive: true })
+    window.addEventListener('keydown', loadRemaining, { once: true })
     return () => {
-      window.removeEventListener('scroll', enableMedia)
-      if (idleCallback !== undefined) window.cancelIdleCallback(idleCallback)
-      if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer)
+      window.removeEventListener('scroll', loadRemaining)
+      window.removeEventListener('pointerdown', loadRemaining)
+      window.removeEventListener('touchstart', loadRemaining)
+      window.removeEventListener('keydown', loadRemaining)
     }
-  }, [reducedMotion])
+  }, [loadRemainingMedia, reducedMotion])
 
-  if (reducedMotion || mobile === null || !mediaEnabled) return null
+  if (reducedMotion === true) return null
+
+  const initialSegmentCount = Math.ceil(segments.length / 2)
+  const shouldLoadRemaining = loadRemainingMedia
+    || activeSegmentIndex >= initialSegmentCount
+  const segmentsToLoad = shouldLoadRemaining
+    ? segments
+    : segments.slice(0, initialSegmentCount)
 
   return (
-    <div className={styles.videoStack} aria-hidden="true">
-      {segments.map((segment, index) => {
-        const hasSource = mobile ? segment.videoMobile : segment.videoDesktop
-        if (!hasSource || Math.abs(index - activeSegmentIndex) > 1) return null
+    <div className={styles.videoStack}>
+      <div className={styles.videoLoading} role="status" aria-live="polite">
+        <span className={styles.videoLoadingIndicator} aria-hidden="true" />
+        <span>画面加载中</span>
+      </div>
+      {mobile !== null ? (
+        <>
+          {segmentsToLoad.map((segment, index) => {
+            const hasSource = mobile ? segment.videoMobile : segment.videoDesktop
+            if (!hasSource) return null
 
-        return (
-          <ManagedVideo
-            key={`${segment.id}-${mobile ? 'mobile' : 'desktop'}`}
-            segment={segment}
-            active={index === activeSegmentIndex}
-            mobile={mobile}
-            registerVideo={registerVideo}
-            onVideoTimingChange={onVideoTimingChange}
-          />
-        )
-      })}
-      <ReunionAmbientVideo
-        key={`reunion-loop-${mobile ? 'mobile' : 'desktop'}`}
-        mobile={mobile}
-        registerAmbientVideo={registerAmbientVideo}
-      />
+            return (
+              <ManagedVideo
+                key={`${segment.id}-${mobile ? 'mobile' : 'desktop'}`}
+                segment={segment}
+                active={index === activeSegmentIndex}
+                mobile={mobile}
+                registerVideo={registerVideo}
+                onVideoTimingChange={onVideoTimingChange}
+              />
+            )
+          })}
+          {shouldLoadRemaining ? (
+            <ReunionAmbientVideo
+              key={`reunion-loop-${mobile ? 'mobile' : 'desktop'}`}
+              mobile={mobile}
+              registerAmbientVideo={registerAmbientVideo}
+            />
+          ) : null}
+        </>
+      ) : null}
     </div>
   )
 }
