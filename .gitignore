@@ -1,94 +1,42 @@
-node_modules
-dist
+# dependencies
+/node_modules
+
+# next.js
+/.next
+/out
+
+# production
+/build
+
+# testing
+/coverage
+/playwright-report
+/test-results
+/.playwright-cli
+
+# local output and working files
+/output
+/tmp
+
+# local environment files
+.env*
+!.env.example
+
+# macOS
 .DS_Store
-*.swp
-.git/*
-__pycache__/
-*.pyc
-.venv/*
-*.o
-*.a
-/vendor
-*.egg-info/
-/.env
-.env
-.cozeproj/reduction
 
-# JS/TS bundlers & build outputs
-.next
-.nuxt
-.turbo
-.vercel
-.parcel-cache
-.cache
-coverage
-storybook-static
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
 
-# Package manager artifacts
-.pnp*
-.npm
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# Python tooling
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.tox/
+# local media generation state
+/.maka-media
 
-# Go tooling
-bin/
-*.test
-
-# Editor / IDE
-.vscode/
-.idea/
-*.iml
-
-# OS / misc
-Thumbs.db
-ehthumbs.db
-
-# Logs
-output.log
-*.log
-*.log.*
-logs/
-
-# 视频文件
-*.mp4
-*.avi
-*.mov
-*.wmv
-*.flv
-*.mkv
-*.webm
-*.m4v
-*.mpeg
-*.mpg
-*.3gp
-*.f4v
-*.rmvb
-*.vob
-
-# 归档文件
-*.iso
-*.dmg
-*.rar
-*.zip
-*.gz
-
-# 文档类也默认加入
-*.pdf
-*.docx
-*.doc
-*.xlsx
-*.xls
-*.ppt
-*.pptx
-*.xlsx
-*.csv
-
-# Preview files
-.preview
-
-# CodeGraph index
-.codegraph
+# local analytics data
+/.data

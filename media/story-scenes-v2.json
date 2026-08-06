@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "project": "maka-planet-character-story-scenes-v2",
+  "image": {
+    "endpoint": "/v2/external/image/tencent/gpt-image2/create",
+    "modelVersion": "image2_high",
+    "resolution": "2K"
+  },
+  "video": {
+    "endpoint": "/v2/external/video/kkidc_sd2/seedance/create",
+    "model": "doubao-seedance-2-0-260128",
+    "durationSeconds": 5,
+    "resolution": "1080p",
+    "generateAudio": false,
+    "watermark": false
+  },
+  "formats": {
+    "desktop": {
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
+      "gop": 8,
+      "crf": 20
+    },
+    "mobile": {
+      "ratio": "9:16",
+      "width": 1080,
+      "height": 1920,
+      "gop": 4,
+      "crf": 23
+    }
+  },
+  "styleReferenceUrl": "https://raw.githubusercontent.com/wangziheng2211222/makawangzhan/main/public/images/scenes/maka-town-social.webp",
+  "existingVideoBaseUrl": "https://raw.githubusercontent.com/wangziheng2211222/makawangzhan/main/public/media/journey",
+  "boundarySources": {
+    "desktop": {
+      "dive-town": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/desktop/dive-town.mp4",
+        "sha256": "d3174bfbe8b2ca8ef7fd35e20f5abd4c80683af003989d5fe1231b5a5e62c1a7"
+      },
+      "dive-jiuka": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/desktop/dive-jiuka.mp4",
+        "sha256": "9551e65fe1fd260e34b3b59a95ed2edcf2f2d1db16ac88caf08758eff4ed5af0"
+      },
+      "dive-little-devil": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@87d8fefb615a548c834c679847e5691e5592b064/public/media/story-source/desktop/dive-little-devil.mp4",
+        "sha256": "ebb14d270bde409be4a3e1823b61b9f79bc21983f9c835e64a47ed1b880a6b2c"
+      },
+      "dive-biker-rabbit": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@aeda928e3521431953d81dad80d26c4723d30351/public/media/story-source/desktop/dive-biker-rabbit.mp4",
+        "sha256": "23519baafddfe03f2908a02e07fd29c02e0d7ef840e06feb52583147dea814e9"
+      },
+      "dive-pipi": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/desktop/dive-pipi.mp4",
+        "sha256": "406536e384cd0b985d302e6526b2fe12a35c043b70cc05d9bc35571b0edb41f6"
+      },
+      "dive-reunion": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/desktop/dive-reunion.mp4",
+        "sha256": "692e2db31479d9de28af8284744119b40eb0575519c021f1e2c9435b70a3e628"
+      }
+    },
+    "mobile": {
+      "dive-town": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/mobile/dive-town.mp4",
+        "sha256": "f4575333b0c8d200eded373cb2c7fe8d5061e6018cd90a963793f4d04e16d7a6"
+      },
+      "dive-jiuka": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/mobile/dive-jiuka.mp4",
+        "sha256": "bf1757798badd704274dc0e88cda305ac9b7869f84d0c8c1e6d15f46b31803e3"
+      },
+      "dive-little-devil": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/mobile/dive-little-devil.mp4",
+        "sha256": "561a1afb170c53b5889fb9f28c66224b33bc279f2e34b11fddc093b75a2e180b"
+      },
+      "dive-biker-rabbit": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@aeda928e3521431953d81dad80d26c4723d30351/public/media/story-source/mobile/dive-biker-rabbit.mp4",
+        "sha256": "2bdfc3f888c9ba066bd81c480a09e70be2cf4884f19ca252eec7d911a016bad5"
+      },
+      "dive-pipi": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/mobile/dive-pipi.mp4",
+        "sha256": "7aedc811ea2802ac8d81217a0e5278ea26d2b9a66a79fabb34942c74affcce5a"
+      },
+      "dive-reunion": {
+        "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@35b1ca7aea10411cef504d6b31933aa57ca0b274/public/media/story-source/mobile/dive-reunion.mp4",
+        "sha256": "342a934a4f4140180fdf208a83d6563335a2c827fd1165f1e847e357bac71512"
+      }
+    }
+  },
+  "scenes": [
+    {
+      "id": "dive-jiuka",
+      "chapterId": "jiuka",
+      "useVideoReference": false,
+      "productReferenceUrl": "https://raw.githubusercontent.com/wangziheng2211222/makawangzhan/main/public/images/products/jiuka-cutout.webp",
+      "imagePromptFile": "media/prompts/story-scenes-v2/jiuka-keyframe.md",
+      "videoPromptFile": "media/prompts/story-scenes-v2/jiuka-motion.md"
+    },
+    {
+      "id": "dive-little-devil",
+      "chapterId": "little-devil",
+      "useVideoReference": false,
+      "productReferenceUrl": "https://raw.githubusercontent.com/wangziheng2211222/makawangzhan/main/public/images/products/little-devil-cutout.webp",
+      "imagePromptFile": "media/prompts/story-scenes-v2/little-devil-keyframe.md",
+      "videoPromptFile": "media/prompts/story-scenes-v2/little-devil-motion.md"
+    },
+    {
+      "id": "dive-biker-rabbit",
+      "chapterId": "biker-rabbit",
+      "useVideoReference": false,
+      "productReferenceUrl": "https://raw.githubusercontent.com/wangziheng2211222/makawangzhan/main/public/images/products/biker-rabbit-cutout.webp",
+      "imagePromptFile": "media/prompts/story-scenes-v2/biker-rabbit-lake-keyframe.md",
+      "videoPromptFile": "media/prompts/story-scenes-v2/biker-rabbit-water-motion.md",
+      "manualImageSources": {
+        "desktop": {
+          "file": "public/images/scenes/source/biker-rabbit-desktop.png",
+          "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@aeda928e3521431953d81dad80d26c4723d30351/public/images/scenes/source/biker-rabbit-desktop.png",
+          "sha256": "e22c5ea2ebb03cbe2584de4b2fe9d5304bf017cb5438b2f9863b2002c999f947"
+        },
+        "mobile": {
+          "file": "public/images/scenes/source/biker-rabbit-mobile.png",
+          "url": "https://cdn.jsdelivr.net/gh/wangziheng2211222/makawangzhan@aeda928e3521431953d81dad80d26c4723d30351/public/images/scenes/source/biker-rabbit-mobile.png",
+          "sha256": "0d19738df5b83c8619be2d7962379da15d4d277df31a1e6f7e3254b72a2dfeef"
+        }
+      }
+    },
+    {
+      "id": "dive-pipi",
+      "chapterId": "pipi",
+      "useVideoReference": false,
+      "productReferenceUrl": "https://raw.githubusercontent.com/wangziheng2211222/makawangzhan/main/public/images/products/pipi-cutout.webp",
+      "imagePromptFile": "media/prompts/story-scenes-v2/pipi-keyframe.md",
+      "videoPromptFile": "media/prompts/story-scenes-v2/pipi-motion.md"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "connector-town-to-jiuka",
+      "from": "dive-town",
+      "to": "dive-jiuka",
+      "promptFile": "media/prompts/story-scenes-v2/connector-town-to-jiuka.md"
+    },
+    {
+      "id": "connector-jiuka-to-little-devil",
+      "from": "dive-jiuka",
+      "to": "dive-little-devil",
+      "promptFile": "media/prompts/story-scenes-v2/connector-jiuka-to-little-devil.md"
+    },
+    {
+      "id": "connector-little-devil-to-biker-rabbit",
+      "from": "dive-little-devil",
+      "to": "dive-biker-rabbit",
+      "promptFile": "media/prompts/story-scenes-v2/connector-little-devil-to-biker-rabbit.md",
+      "formatPromptFiles": {
+        "mobile": "media/prompts/story-scenes-v2/connector-little-devil-to-biker-rabbit-mobile.md"
+      }
+    },
+    {
+      "id": "connector-biker-rabbit-to-pipi",
+      "from": "dive-biker-rabbit",
+      "to": "dive-pipi",
+      "promptFile": "media/prompts/story-scenes-v2/connector-biker-rabbit-to-pipi.md",
+      "formatPromptOverrides": {
+        "mobile": "media/prompts/story-scenes-v2/connector-biker-rabbit-to-pipi-mobile.md"
+      }
+    },
+    {
+      "id": "connector-pipi-to-reunion",
+      "from": "dive-pipi",
+      "to": "dive-reunion",
+      "promptFile": "media/prompts/story-scenes-v2/connector-pipi-to-reunion.md",
+      "formatPromptFiles": {
+        "mobile": "media/prompts/story-scenes-v2/connector-pipi-to-reunion-mobile.md"
+      }
+    }
+  ]
+}

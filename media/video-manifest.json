@@ -1,0 +1,202 @@
+{
+  "version": 2,
+  "project": "maka-town-scroll-world",
+  "supplier": "ai-platform-kkidc-sd2-seedance",
+  "model": "doubao-seedance-2-0-260128",
+  "request": {
+    "idleTask": 0,
+    "durationSeconds": 5,
+    "resolution": "1080p",
+    "generateAudio": false,
+    "returnLastFrame": false,
+    "boundaryFrames": "decoded-from-published-output",
+    "watermark": false,
+    "webSearch": false
+  },
+  "formats": {
+    "desktop": {
+      "ratio": "16:9",
+      "width": 1920,
+      "height": 1080,
+      "gop": 8,
+      "crf": 20
+    },
+    "mobile": {
+      "ratio": "9:16",
+      "width": 1080,
+      "height": 1920,
+      "gop": 4,
+      "crf": 23
+    }
+  },
+  "segments": [
+    {
+      "id": "dive-town",
+      "kind": "dive-in",
+      "promptFile": "media/prompts/dive-town.md",
+      "sourceStatus": "desktop-reframed-from-mobile-fixed-scene",
+      "desktopOpening": {
+        "method": "deterministic-dynamic-crop-and-scale",
+        "source": "public/media/journey/mobile/dive-town.mp4",
+        "crop": "1080x608, y=min(800,500+60*t)",
+        "output": "1920x1080",
+        "firstFrame": "output/desktop-mobile-reference-opening/desktop-fixed-scene-first.png",
+        "geometryPolicy": "source-frames-only-no-generative-interpolation"
+      },
+      "inputFrames": {
+        "desktop": {
+          "first": "output/video/candidates/town-planet-entry-v2/inputs/desktop-planet-approach.png"
+        },
+        "mobile": {
+          "first": "output/video/candidates/town-planet-entry-v2/inputs/mobile-planet-approach.png"
+        }
+      },
+      "referenceImages": {
+        "desktop": [
+          "output/video/candidates/town-planet-entry-v2/references/town-hd.png",
+          "output/video/candidates/town-planet-entry-v2/references/pipi-official-480.png"
+        ],
+        "mobile": [
+          "output/video/candidates/town-planet-entry-v2/references/town-hd.png",
+          "output/video/candidates/town-planet-entry-v2/references/pipi-official-480.png"
+        ]
+      },
+      "source": {
+        "desktop": "public/images/scenes/town-opening-desktop.webp",
+        "mobile": "public/images/scenes/town-clouds-mobile.webp"
+      }
+    },
+    {
+      "id": "connector-town-to-jiuka",
+      "kind": "connector",
+      "promptFile": "media/prompts/connector-town-to-jiuka.md",
+      "from": "dive-town",
+      "to": "dive-jiuka",
+      "referenceImages": {
+        "desktop": [
+          "output/video/candidates/town-planet-entry-v2/references/pipi-official-480.png"
+        ],
+        "mobile": [
+          "output/video/candidates/town-planet-entry-v2/references/pipi-official-480.png"
+        ]
+      }
+    },
+    {
+      "id": "dive-jiuka",
+      "kind": "dive-in",
+      "promptFile": "media/prompts/dive-jiuka.md",
+      "sourceStatus": "review-candidate",
+      "environment": {
+        "desktop": "public/images/scenes/jiuka-environment-desktop.webp",
+        "mobile": "public/images/scenes/jiuka-environment-mobile.webp"
+      },
+      "product": "public/images/products/jiuka-cutout.webp"
+    },
+    {
+      "id": "connector-jiuka-to-little-devil",
+      "kind": "connector",
+      "promptFile": "media/prompts/connector-jiuka-to-little-devil.md",
+      "from": "dive-jiuka",
+      "to": "dive-little-devil"
+    },
+    {
+      "id": "dive-little-devil",
+      "kind": "dive-in",
+      "promptFile": "media/prompts/dive-little-devil.md",
+      "sourceStatus": "review-candidate",
+      "environment": {
+        "desktop": "public/images/scenes/little-devil-environment-desktop.webp",
+        "mobile": "public/images/scenes/little-devil-environment-mobile.webp"
+      },
+      "product": "public/images/products/little-devil-cutout.webp"
+    },
+    {
+      "id": "connector-little-devil-to-biker-rabbit",
+      "kind": "connector",
+      "promptFile": "media/prompts/connector-little-devil-to-biker-rabbit.md",
+      "from": "dive-little-devil",
+      "to": "dive-biker-rabbit"
+    },
+    {
+      "id": "dive-biker-rabbit",
+      "kind": "dive-in",
+      "promptFile": "media/prompts/dive-biker-rabbit.md",
+      "sourceStatus": "low-resolution-reference",
+      "environment": {
+        "desktop": "public/images/scenes/biker-rabbit-environment-desktop.webp",
+        "mobile": "public/images/scenes/biker-rabbit-environment-mobile.webp"
+      },
+      "product": ".maka-media/product-cutouts/gee-too-v2.webp",
+      "productSource": "output/imagegen/characters/gee-too-product-master-v2.png"
+    },
+    {
+      "id": "connector-biker-rabbit-to-pipi",
+      "kind": "connector",
+      "promptFile": "media/prompts/connector-biker-rabbit-to-pipi.md",
+      "from": "dive-biker-rabbit",
+      "to": "dive-pipi"
+    },
+    {
+      "id": "dive-pipi",
+      "kind": "dive-in",
+      "promptFile": "media/prompts/dive-pipi.md",
+      "sourceStatus": "low-resolution-reference",
+      "environment": {
+        "desktop": "public/images/scenes/pipi-environment-desktop.webp",
+        "mobile": "public/images/scenes/pipi-environment-mobile.webp"
+      },
+      "product": ".maka-media/product-cutouts/pipi-v2.webp",
+      "productSource": "output/imagegen/characters/pipi-product-master-v2.png"
+    },
+    {
+      "id": "connector-pipi-to-reunion",
+      "kind": "connector",
+      "promptFile": "media/prompts/connector-pipi-to-reunion.md",
+      "sourceStatus": "ai-generated-day-to-night-transition",
+      "from": "dive-pipi",
+      "to": "dive-reunion",
+      "durationSeconds": 6,
+      "inputFrames": {
+        "desktop": {
+          "first": "output/reunion-night-v2/share/pipi-last-desktop.png",
+          "last": "output/reunion-night-v2/night-desktop.bin"
+        },
+        "mobile": {
+          "first": "output/reunion-night-v2/share/pipi-last-mobile.png",
+          "last": "output/reunion-night-v2/night-mobile.bin"
+        }
+      },
+      "taskIds": {
+        "desktop": "872270185704812544",
+        "mobile": "872270185998417920"
+      }
+    },
+    {
+      "id": "dive-reunion",
+      "kind": "dive-in",
+      "promptFile": "media/prompts/reunion-night-loop.md",
+      "sourceStatus": "ai-generated-night-ambient-loop",
+      "durationSeconds": 6,
+      "source": {
+        "desktop": "public/images/scenes/reunion-night-desktop.webp",
+        "mobile": "public/images/scenes/reunion-night-mobile.webp"
+      }
+    }
+  ],
+  "ambientLoops": [
+    {
+      "id": "reunion-loop",
+      "promptFile": "media/prompts/reunion-night-loop.md",
+      "sourceStatus": "ai-generated-seamless-ambient-loop",
+      "durationSeconds": 6,
+      "taskIds": {
+        "desktop": "872262416029286400",
+        "mobile": "872262416440332288"
+      },
+      "video": {
+        "desktop": "public/media/journey/desktop/reunion-loop.mp4",
+        "mobile": "public/media/journey/mobile/reunion-loop.mp4"
+      }
+    }
+  ]
+}
