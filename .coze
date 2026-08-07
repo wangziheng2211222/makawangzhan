@@ -6,5 +6,5 @@ build = ["pnpm", "run", "build:preview"]
 run = ["pnpm", "run", "start"]
 
 [deploy]
-build = ["pnpm", "run", "build"]
+build = ["pnpm", "run", "build:preview"]
 run = ["pnpm", "run", "start"]
