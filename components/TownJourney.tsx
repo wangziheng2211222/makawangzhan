@@ -258,6 +258,7 @@ export function TownJourney({
   const [initialMediaReady, setInitialMediaReady] = useState(false)
   const [showLoadingScreen, setShowLoadingScreen] = useState(true)
   const [loadedInitialPosterMode, setLoadedInitialPosterMode] = useState<boolean | null>(null)
+  const [forceVideoReady, setForceVideoReady] = useState(false)
   const [videoRevision, setVideoRevision] = useState(0)
   const [worldIntroCue, setWorldIntroCue] = useState<WorldIntroCue | null>(
     () => WORLD_INTRO_CUES['dive-town']?.[0] ?? null,
@@ -294,7 +295,7 @@ export function TownJourney({
     && (initialVideo.readyState >= 2 || initialVideo.dataset.failed === 'true'),
   )
   const loadingVisualReady = initialMediaReady
-    && initialVideoReady
+    && (initialVideoReady || forceVideoReady)
     && (reducedMotion === true || loadedInitialPosterMode === mobile)
 
   useLayoutEffect(() => {
@@ -380,6 +381,16 @@ export function TownJourney({
     hasCompletedInitialLoadRef.current = true
     setDisplayedPreloadProgress(1)
     setInitialMediaReady(true)
+
+    // In WebViews (WeChat / DingTalk), preload is ignored and videos won't
+    // start loading until user interaction. Actively call load() on all
+    // mounted videos so readyState advances without requiring a touch.
+    videoRefs.current.forEach((video) => {
+      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        video.preload = 'auto'
+        video.load()
+      }
+    })
   }, [])
 
   const handleSegmentPreloadStateChange = useCallback((
@@ -745,6 +756,16 @@ export function TownJourney({
       window.removeEventListener('keydown', preventKeyboardScroll)
     }
   }, [showTownChoice])
+
+  useEffect(() => {
+    if (!initialMediaReady || initialVideoReady) return
+
+    // Some WebViews (WeChat / DingTalk) never fire loadeddata for preload='auto'
+    // videos until user interaction. Force-complete the loading screen after 2s
+    // so users aren't stuck waiting for a readyState that may never advance.
+    const timer = window.setTimeout(() => setForceVideoReady(true), 2000)
+    return () => window.clearTimeout(timer)
+  }, [initialMediaReady, initialVideoReady])
 
   useEffect(() => {
     if (!loadingVisualReady) return
