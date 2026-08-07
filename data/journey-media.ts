@@ -3,8 +3,20 @@ import { validateJourneyMedia } from '@/lib/validate-journey-media'
 import type { JourneyMediaSegment } from '@/types/robot'
 
 const mediaSource = (name: string) => process.env[`NEXT_PUBLIC_MEDIA_${name}`] || undefined
-const productionVideo = (format: 'desktop' | 'mobile', id: string) =>
-  `/media/journey/${format}/${id}.mp4`
+const MOBILE_COMPATIBILITY_CACHE_VERSION = '20260807-main40'
+const VERSIONED_MOBILE_VIDEO_IDS = new Set([
+  'dive-town',
+  'connector-little-devil-to-biker-rabbit',
+  'dive-biker-rabbit',
+  'connector-biker-rabbit-to-pipi',
+  'dive-pipi',
+])
+const productionVideo = (format: 'desktop' | 'mobile', id: string) => {
+  const source = `/media/journey/${format}/${id}.mp4`
+  return format === 'mobile' && VERSIONED_MOBILE_VIDEO_IDS.has(id)
+    ? `${source}?v=${MOBILE_COMPATIBILITY_CACHE_VERSION}`
+    : source
+}
 const productionPoster = (format: 'desktop' | 'mobile', id: string) =>
   `/images/scenes/journey-posters/${format}/${id}.jpg`
 const productionMedia = (id: string) => ({
