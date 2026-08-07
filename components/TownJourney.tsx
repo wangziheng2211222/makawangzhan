@@ -267,6 +267,7 @@ export function TownJourney({
   const [initialMediaReady, setInitialMediaReady] = useState(false)
   const [showLoadingScreen, setShowLoadingScreen] = useState(true)
   const [loadedInitialPosterMode, setLoadedInitialPosterMode] = useState<boolean | null>(null)
+  const [initialVideoDisplayedMode, setInitialVideoDisplayedMode] = useState<boolean | null>(null)
   const [forceVideoReady, setForceVideoReady] = useState(false)
   const [videoRevision, setVideoRevision] = useState(0)
   const [worldIntroCue, setWorldIntroCue] = useState<WorldIntroCue | null>(
@@ -302,6 +303,11 @@ export function TownJourney({
   const initialVideoReady = reducedMotion === true || Boolean(
     initialVideo
     && (initialVideo.readyState >= 2 || initialVideo.dataset.failed === 'true'),
+  )
+  const initialVideoDisplayable = Boolean(
+    initialVideo
+    && initialVideo.readyState >= 2
+    && initialVideo.dataset.failed !== 'true',
   )
   const loadingVisualReady = initialMediaReady
     && (initialVideoReady || forceVideoReady)
@@ -777,6 +783,18 @@ export function TownJourney({
   }, [initialMediaReady, initialVideoReady])
 
   useEffect(() => {
+    // Latch (per display mode): once the first video can actually paint a
+    // frame, keep the poster hidden for the rest of the session. readyState
+    // can momentarily dip during seeks; without latching, the poster would
+    // flicker back on top. Until then the poster stays visible above the
+    // (opaque) video stack so WebViews that can't decode the video yet
+    // never show a black screen.
+    if (initialVideoDisplayable && mobile !== null) {
+      setInitialVideoDisplayedMode(mobile)
+    }
+  }, [initialVideoDisplayable, mobile])
+
+  useEffect(() => {
     if (!loadingVisualReady) return
     const timer = window.setTimeout(() => setShowLoadingScreen(false), 520)
     return () => window.clearTimeout(timer)
@@ -804,6 +822,10 @@ export function TownJourney({
   useEffect(() => {
     if (reducedMotion !== false) return
 
+    // Paint the initial frame synchronously: some WebViews throttle rAF
+    // until the first user interaction, which would leave scene copy and
+    // media slots at their initial (invisible) CSS state.
+    renderJourneyFrame(renderedProgressRef.current)
     requestJourneyUpdate()
     window.addEventListener('scroll', requestJourneyUpdate, { passive: true })
     window.addEventListener('resize', requestJourneyUpdate)
@@ -815,7 +837,7 @@ export function TownJourney({
       frameRef.current = null
       previousFrameTimeRef.current = null
     }
-  }, [reducedMotion, requestJourneyUpdate])
+  }, [reducedMotion, renderJourneyFrame, requestJourneyUpdate])
 
   const setJourneyProgress = useCallback(
     (progress: number) => {
@@ -1596,7 +1618,11 @@ export function TownJourney({
           <div
             key={`initial-poster-${mobile ? 'mobile' : 'desktop'}`}
             className={styles.initialJourneyPoster}
-            data-active={activeSegmentIndex === 0 ? 'true' : 'false'}
+            data-active={
+              activeSegmentIndex === 0 && initialVideoDisplayedMode !== mobile
+                ? 'true'
+                : 'false'
+            }
             aria-hidden="true"
           >
             <Image

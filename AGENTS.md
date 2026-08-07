@@ -26,7 +26,9 @@
 
 ## 关键机制
 - 双端资源：媒体查询 `(max-width: 800px)` 判定移动端（`lib/journey-media-query.ts`），加载对应视频
-- 预加载：首 3 段 fetch→blob→objectURL 后才放行加载屏；其余后台顺序下载；仅完全下载的段落可播放
+- 预加载：首 3 段 fetch 完整下载后才放行加载屏；其余后台顺序下载；仅完全下载的段落可播放
+- 视频源：桌面端用 fetch→blob→objectURL 作 `<video>` src；移动端（含微信）改用直连 URL——微信 X5/WKWebView 无法解码 blob: 视频（加载完成后黑屏、不报错）。fetch 预加载在移动端仍保留，仅用于进度/播放门禁/HTTP 缓存预热（`/media/journey/**` 已配 `Cache-Control: public, max-age=86400`，视频元素二次请求可命中缓存）
+- 首帧防黑屏：首帧海报层级在视频层之上（z3，视频层 z2、文案层 z4），直到首个视频 readyState≥2 才按显示模式锁存隐藏；挂载后同步渲染首帧，不依赖 rAF（部分 WebView 首次交互前暂停 rAF）
 - 微信适配：视频 muted + playsInline + x5-playsinline + x5-video-player-type="h5-page"；视口用 svh 单位；触摸手势 passive:false 控制滑动播放
 - 埋点：POST `/api/analytics/events` 仅接受 `business_cta_click`（source∈chapter/chooser/reunion + https destination + sessionId）
 - 屁屁章节无 CTA 按钮：`dive-pipi` 配置 `autoAdvance: true`，播完不停顿，自动连播 connector-pipi-to-reunion → dive-reunion 直达结尾；报名入口只保留在"进入小镇"选择层与 reunion 章节

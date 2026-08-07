@@ -256,6 +256,13 @@ export function JourneyVideoLayer({
     const backgroundController = new AbortController()
     const objectUrls = new Set<string>()
     const loadedAssetIds = new Set<PreloadAssetId>()
+    // WeChat / mobile WebViews cannot reliably decode blob: URLs in <video>
+    // (Android X5 kernel shows a black frame without firing any error event,
+    // iOS WKWebView support is inconsistent across versions). On mobile the
+    // <video> element always uses the direct HTTP URL; this fetch pipeline
+    // still runs to drive loading progress, gate segment playback, and warm
+    // the HTTP cache (see the Cache-Control header for /media/journey/*).
+    const useObjectUrls = mobile === false
     const segmentAssets: Array<{ id: PreloadAssetId; source: string }> = segments.flatMap(
       (segment) => {
         const source = mobile ? segment.videoMobile : segment.videoDesktop
@@ -308,15 +315,17 @@ export function JourneyVideoLayer({
         }
 
         if (cancelled) return
-        const objectUrl = URL.createObjectURL(blob)
-        objectUrls.add(objectUrl)
-        setPreloadedMedia((current) => ({
-          mobile,
-          sources: {
-            ...(current.mobile === mobile ? current.sources : {}),
-            [id]: objectUrl,
-          },
-        }))
+        if (useObjectUrls) {
+          const objectUrl = URL.createObjectURL(blob)
+          objectUrls.add(objectUrl)
+          setPreloadedMedia((current) => ({
+            mobile,
+            sources: {
+              ...(current.mobile === mobile ? current.sources : {}),
+              [id]: objectUrl,
+            },
+          }))
+        }
         loadedAssetIds.add(id)
         onSegmentPreloadStateChange(id, mobile, true)
         return true
@@ -408,7 +417,9 @@ export function JourneyVideoLayer({
             key={`${segment.id}-${mobile ? 'mobile' : 'desktop'}`}
             segment={segment}
             mobile={mobile}
-            preloadedSource={preloadedSources[segment.id]}
+            // Mobile WebViews (WeChat X5 / iOS WKWebView) get the direct HTTP
+            // URL — blob: URLs render as a black screen there (see above).
+            preloadedSource={mobile === false ? preloadedSources[segment.id] : undefined}
             preload={index === activeSegmentIndex || index === eagerSegmentIndex || isNextSegment
               ? 'auto'
               : 'none'}

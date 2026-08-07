@@ -57,8 +57,11 @@
 .initialJourneyPoster {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  /* Above the (opaque) video stack so the first frame stays visible until
+   * the first video can actually paint; below the scene copy stack (z: 4). */
+  z-index: 3;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 300ms ease;
 }
 
