@@ -921,6 +921,14 @@ export function TownJourney({
           }
         }
         updatePlayback()
+
+        // Some WebViews (WeChat / DingTalk) never fire the `ended` event for
+        // blob-URL videos. Poll for completion so finishPlayback always runs.
+        if (!manualPlaybackActive && hasCompletedJourneyVideoPlayback(video)) {
+          finishPlayback()
+          return
+        }
+
         renderFrameId = window.setTimeout(renderPlaybackFrame, PLAYBACK_FRAME_INTERVAL_MS)
       }
 
