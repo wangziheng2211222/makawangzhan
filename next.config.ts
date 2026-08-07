@@ -8,6 +8,15 @@ const devDomain = process.env.COZE_PROJECT_DOMAIN_DEFAULT
 const nextConfig: NextConfig = {
   devIndicators: false,
   outputFileTracingRoot: path.join(__dirname),
+  // Coze 部署的 runtime_pkg 阶段基于 Next.js 文件追踪(nft)结果打包运行时文件。
+  // public/ 下的静态资源（视频、海报图）默认不被 nft 追踪，导致生产环境缺失 → 404。
+  // 显式将所有 public 资源纳入 '/' 路由的文件追踪，确保部署时一并打包。
+  outputFileTracingIncludes: {
+    '/': [
+      './public/media/**/*',
+      './public/images/**/*',
+    ],
+  },
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
