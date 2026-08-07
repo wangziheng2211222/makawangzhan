@@ -46,7 +46,7 @@ export function getBikerRabbitCopyOpacity(progress: number) {
 }
 
 export function getPipiCopyOpacity(progress: number) {
-  return clamp((progress - 0.45) / 0.12)
+  return clamp((progress - 0.35) / 0.12)
 }
 
 export function lingerEase(progress: number, linger = 0) {

@@ -32,6 +32,8 @@ import {
   canRetainJourneyVideoFrame,
   canShowJourneyVideo,
   hasCompletedJourneyVideoPlayback,
+  shouldFallbackToManualJourneyVideoPlayback,
+  shouldRequestJourneyVideoLoad,
   shouldSeekJourneyVideo,
   shouldResumeJourneyVideoPlayback,
   subscribeToMediaQuery,
@@ -83,7 +85,6 @@ const NEXT_SEGMENT_EAGER_THRESHOLD = 0.72
 const MOBILE_SWIPE_THRESHOLD_PX = 44
 const WHEEL_GESTURE_IDLE_MS = 180
 const SEGMENT_BOUNDARY_ADVANCE_PX = 2
-const PLAYBACK_START_FALLBACK_MS = 100
 const PLAYBACK_FRAME_INTERVAL_MS = 33
 const LOADING_VISUAL_INITIAL_PROGRESS = 0.03
 const LOADING_VISUAL_PROGRESS_CAP = 0.9
@@ -99,16 +100,10 @@ const WORLD_INTRO_CUES: Partial<Record<JourneyMediaSegment['id'], readonly World
       endsAt: 0.31,
     },
     {
-      id: 'town-welcome',
-      lines: ['欢迎来到玛卡小镇。'],
-      startsAt: 0.56,
-      endsAt: 0.82,
-    },
-    {
-      id: 'town-recruitment',
-      lines: ['这里正在招募小镇居民。'],
-      startsAt: 0.84,
-      endsAt: 0.98,
+      id: 'town-welcome-and-recruitment',
+      lines: ['欢迎来到玛卡小镇。', '这里正在招募小镇居民。'],
+      startsAt: 0.5,
+      endsAt: 0.99,
     },
   ],
   'connector-town-to-jiuka': [
@@ -401,7 +396,7 @@ export function TownJourney({
     // start loading until user interaction. Actively call load() on all
     // mounted videos so readyState advances without requiring a touch.
     videoRefs.current.forEach((video) => {
-      if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+      if (shouldRequestJourneyVideoLoad(video)) {
         video.preload = 'auto'
         video.load()
       }
@@ -423,6 +418,30 @@ export function TownJourney({
     fullyLoadedSegmentKeysRef.current = next
     setFullyLoadedSegmentKeys(next)
   }, [])
+
+  const isSegmentReadyForPlayback = useCallback((segmentId: JourneyMediaSegment['id']) => {
+    if (mobile === null) return false
+    if (fullyLoadedSegmentKeysRef.current.has(getSegmentPreloadKey(segmentId, mobile))) {
+      return true
+    }
+    if (!mobile) return false
+
+    const video = videoRefs.current.get(segmentId)
+    return Boolean(
+      video
+      && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+      && !video.error
+      && video.dataset.failed !== 'true',
+    )
+  }, [mobile])
+
+  const areSegmentsReadyForChapterAdvance = useCallback((
+    requiredSegments: JourneyMediaSegment[],
+  ) => {
+    if (mobile === null || requiredSegments.length === 0) return false
+    const segmentsToCheck = mobile ? requiredSegments.slice(0, 1) : requiredSegments
+    return segmentsToCheck.every((segment) => isSegmentReadyForPlayback(segment.id))
+  }, [isSegmentReadyForPlayback, mobile])
 
   const renderJourneyFrame = useCallback((progress: number) => {
     const journey = journeyRef.current
@@ -865,7 +884,7 @@ export function TownJourney({
 
       const entry = segmentTimeline.entries[entryIndex]
       if (!entry) return false
-      if (!fullyLoadedSegmentKeysRef.current.has(getSegmentPreloadKey(entry.id, mobile))) {
+      if (!mobile && !isSegmentReadyForPlayback(entry.id)) {
         return false
       }
 
@@ -873,7 +892,7 @@ export function TownJourney({
       if (!video) return false
       if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
         video.preload = 'auto'
-        video.load()
+        if (shouldRequestJourneyVideoLoad(video)) video.load()
         return false
       }
 
@@ -947,7 +966,11 @@ export function TownJourney({
         if (!manualPlaybackActive && nativePlaybackStartedAt !== null) {
           if (video.currentTime > nativePlaybackStartTime + SCRUB_EPSILON) {
             nativePlaybackStartedAt = null
-          } else if (now - nativePlaybackStartedAt >= PLAYBACK_START_FALLBACK_MS) {
+          } else if (shouldFallbackToManualJourneyVideoPlayback(
+            video,
+            nativePlaybackStartTime,
+            now - nativePlaybackStartedAt,
+          )) {
             startManualPlayback()
           }
         }
@@ -963,8 +986,22 @@ export function TownJourney({
         renderFrameId = window.setTimeout(renderPlaybackFrame, PLAYBACK_FRAME_INTERVAL_MS)
       }
 
+      const markNativePlaybackStarted = () => {
+        if (segmentPlaybackRef.current !== playback || manualPlaybackActive) return
+        nativePlaybackStartTime = video.currentTime
+        nativePlaybackStartedAt = performance.now()
+      }
+
+      const markNativePlaybackWaiting = () => {
+        if (segmentPlaybackRef.current !== playback || manualPlaybackActive) return
+        nativePlaybackStartedAt = null
+      }
+
       const cleanup = () => {
         delete video.dataset.manualPlayback
+        video.removeEventListener('playing', markNativePlaybackStarted)
+        video.removeEventListener('waiting', markNativePlaybackWaiting)
+        video.removeEventListener('stalled', markNativePlaybackWaiting)
         video.removeEventListener('ended', finishPlayback)
         video.removeEventListener('pause', finishPlaybackFromPause)
         video.removeEventListener('error', failPlayback)
@@ -999,9 +1036,7 @@ export function TownJourney({
           && Boolean(nextEntry)
         const waitsForAction = reachedSequenceEnd
           || (!hasSequenceNext && entry.kind === 'dive-in' && Boolean(nextEntry) && !autoAdvance)
-        const nextEntryReady = !nextEntry || fullyLoadedSegmentKeysRef.current.has(
-          getSegmentPreloadKey(nextEntry.id, mobile),
-        )
+        const nextEntryReady = !nextEntry || isSegmentReadyForPlayback(nextEntry.id)
         const waitsForMedia = !nextEntryReady
           && (hasSequenceNext || entry.kind === 'connector' || autoAdvance)
         const nextPosition = waitsForAction || waitsForMedia
@@ -1093,6 +1128,9 @@ export function TownJourney({
       renderJourneyFrame(startProgress)
 
       // --- Attach event listeners and start playback ---
+      video.addEventListener('playing', markNativePlaybackStarted)
+      video.addEventListener('waiting', markNativePlaybackWaiting)
+      video.addEventListener('stalled', markNativePlaybackWaiting)
       video.addEventListener('ended', finishPlayback, { once: true })
       video.addEventListener('pause', finishPlaybackFromPause)
       video.addEventListener('error', failPlayback, { once: true })
@@ -1101,8 +1139,6 @@ export function TownJourney({
       renderFrameId = window.setTimeout(renderPlaybackFrame, PLAYBACK_FRAME_INTERVAL_MS)
 
       try {
-        nativePlaybackStartTime = video.currentTime
-        nativePlaybackStartedAt = performance.now()
         const playbackPromise = video.play()
 
         window.setTimeout(resumeInterruptedPlayback, 250)
@@ -1114,7 +1150,11 @@ export function TownJourney({
             .catch(() => {
               // play() rejected — try manual playback instead of giving up.
               if (segmentPlaybackRef.current === playback) {
-                startManualPlayback()
+                if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !video.error) {
+                  startManualPlayback()
+                } else {
+                  failPlayback()
+                }
               }
             })
         } else {
@@ -1127,6 +1167,7 @@ export function TownJourney({
     },
     [
       mobile,
+      isSegmentReadyForPlayback,
       reducedMotion,
       renderJourneyFrame,
       requestJourneyUpdate,
@@ -1148,27 +1189,48 @@ export function TownJourney({
       return
     }
 
-    // Poll until the video is ready (some WebViews ignore preload and delay
-    // loadeddata events, so a single requestAnimationFrame retry is not enough).
-    const intervalId = window.setInterval(() => {
+    const pendingEntry = segmentTimeline.entries[pendingIndex]
+    const pendingVideo = pendingEntry ? videoRefs.current.get(pendingEntry.id) : null
+    if (!pendingVideo) return
+
+    const cleanup = () => {
+      pendingVideo.removeEventListener('loadeddata', retryPlayback)
+      pendingVideo.removeEventListener('canplay', retryPlayback)
+      pendingVideo.removeEventListener('error', stopWaiting)
+      window.clearTimeout(timeoutId)
+    }
+    const retryPlayback = () => {
       if (pendingPlaybackIndexRef.current !== pendingIndex) {
-        window.clearInterval(intervalId)
+        cleanup()
         return
       }
       if (playSegmentAtIndex(pendingIndex)) {
         pendingPlaybackIndexRef.current = null
-        window.clearInterval(intervalId)
+        cleanup()
       }
-    }, 200)
+    }
+    const stopWaiting = () => {
+      if (pendingPlaybackIndexRef.current === pendingIndex) {
+        pendingPlaybackIndexRef.current = null
+      }
+      cleanup()
+    }
+
+    pendingVideo.addEventListener('loadeddata', retryPlayback)
+    pendingVideo.addEventListener('canplay', retryPlayback)
+    pendingVideo.addEventListener('error', stopWaiting)
     const timeoutId = window.setTimeout(() => {
-      window.clearInterval(intervalId)
+      stopWaiting()
     }, 10_000)
 
-    return () => {
-      window.clearInterval(intervalId)
-      window.clearTimeout(timeoutId)
-    }
-  }, [activeSegmentIndex, fullyLoadedSegmentKeys, playSegmentAtIndex, videoRevision])
+    return cleanup
+  }, [
+    activeSegmentIndex,
+    fullyLoadedSegmentKeys,
+    playSegmentAtIndex,
+    segmentTimeline.entries,
+    videoRevision,
+  ])
 
   const startSegmentPlayback = useCallback(
     (segmentIndex: number, sequenceEndIndex: number | null = null) => {
@@ -1218,10 +1280,7 @@ export function TownJourney({
 
       const requiredSegments = segments.slice(connectorIndex, connectorIndex + 2)
       const nextChapterReady = reducedMotion === true || (
-        mobile !== null
-        && requiredSegments.every((segment) => (
-          fullyLoadedSegmentKeys.has(getSegmentPreloadKey(segment.id, mobile))
-        ))
+        areSegmentsReadyForChapterAdvance(requiredSegments)
       )
       if (!nextChapterReady) return
 
@@ -1235,7 +1294,7 @@ export function TownJourney({
       }
       startSegmentPlayback(connectorIndex)
     },
-    [fullyLoadedSegmentKeys, mobile, reducedMotion, segments, startSegmentPlayback],
+    [areSegmentsReadyForChapterAdvance, reducedMotion, segments, startSegmentPlayback],
   )
 
   const enterTown = useCallback(() => {
@@ -1390,7 +1449,9 @@ export function TownJourney({
       const currentVideo = videoRefs.current.get(
         segments[currentFrame.activeSegmentIndex].id,
       )
-      if (currentVideo?.readyState === 0) currentVideo.load()
+      if (currentVideo && shouldRequestJourneyVideoLoad(currentVideo)) {
+        currentVideo.load()
+      }
     }
     const handleTouchMove = (event: TouchEvent) => {
       const gesture = mobileGestureRef.current
@@ -1662,11 +1723,7 @@ export function TownJourney({
               ? segments.slice(connectorIndex, connectorIndex + 2)
               : []
             const nextChapterReady = reducedMotion === true || (
-              mobile !== null
-              && requiredNextSegments.length > 0
-              && requiredNextSegments.every((segment) => (
-                fullyLoadedSegmentKeys.has(getSegmentPreloadKey(segment.id, mobile))
-              ))
+              areSegmentsReadyForChapterAdvance(requiredNextSegments)
             )
             return (
               <article
@@ -1735,7 +1792,10 @@ export function TownJourney({
                       aria-label={`继续${robot.name}之后的旅程`}
                       aria-busy={!nextChapterReady}
                       disabled={!nextChapterReady}
-                      onClick={() => playNextChapter(index, robot.id)}
+                      onClick={(event) => {
+                        if (mobile === true) event.currentTarget.blur()
+                        playNextChapter(index, robot.id)
+                      }}
                     >
                       <span>下一个</span>
                       {!nextChapterReady ? (

@@ -14,6 +14,8 @@ import {
   canRetainJourneyVideoFrame,
   canShowJourneyVideo,
   hasCompletedJourneyVideoPlayback,
+  shouldFallbackToManualJourneyVideoPlayback,
+  shouldRequestJourneyVideoLoad,
   shouldSeekJourneyVideo,
   shouldResumeJourneyVideoPlayback,
   subscribeToMediaQuery,
@@ -112,9 +114,9 @@ assert.equal(getBikerRabbitCopyOpacity(0.82), 0)
 assert.ok(Math.abs(getBikerRabbitCopyOpacity(0.88) - 0.5) < 1e-9)
 assert.equal(getBikerRabbitCopyOpacity(0.94), 1)
 
-assert.equal(getPipiCopyOpacity(0.45), 0)
-assert.ok(Math.abs(getPipiCopyOpacity(0.51) - 0.5) < 1e-9)
-assert.ok(Math.abs(getPipiCopyOpacity(0.57) - 1) < 1e-9)
+assert.equal(getPipiCopyOpacity(0.35), 0)
+assert.ok(Math.abs(getPipiCopyOpacity(0.41) - 0.5) < 1e-9)
+assert.ok(Math.abs(getPipiCopyOpacity(0.47) - 1) < 1e-9)
 
 assert.equal(getTownCopyOpacity(0), 1)
 assert.equal(getTownCopyOpacity(0.38), 1)
@@ -204,6 +206,53 @@ assert.equal(shouldResumeJourneyVideoPlayback({
   ended: false,
   paused: true,
 }), false)
+
+assert.equal(shouldRequestJourneyVideoLoad({ readyState: 0, networkState: 0 }), true)
+assert.equal(shouldRequestJourneyVideoLoad({ readyState: 0, networkState: 2 }), false)
+assert.equal(shouldRequestJourneyVideoLoad({ readyState: 2, networkState: 0 }), false)
+
+const pendingPlaybackVideo = {
+  currentTime: 0,
+  readyState: 3,
+  paused: false,
+  seeking: false,
+  error: null,
+}
+assert.equal(shouldFallbackToManualJourneyVideoPlayback(
+  pendingPlaybackVideo,
+  0,
+  1499,
+), false)
+assert.equal(shouldFallbackToManualJourneyVideoPlayback(
+  pendingPlaybackVideo,
+  0,
+  1500,
+), true)
+assert.equal(shouldFallbackToManualJourneyVideoPlayback(
+  { ...pendingPlaybackVideo, readyState: 2 },
+  0,
+  2000,
+), false)
+assert.equal(shouldFallbackToManualJourneyVideoPlayback(
+  { ...pendingPlaybackVideo, paused: true },
+  0,
+  2000,
+), false)
+assert.equal(shouldFallbackToManualJourneyVideoPlayback(
+  { ...pendingPlaybackVideo, currentTime: 0.04 },
+  0,
+  2000,
+), false)
+assert.equal(shouldFallbackToManualJourneyVideoPlayback(
+  { ...pendingPlaybackVideo, seeking: true },
+  0,
+  2000,
+), false)
+assert.equal(shouldFallbackToManualJourneyVideoPlayback(
+  { ...pendingPlaybackVideo, error: new Error('decode failed') },
+  0,
+  2000,
+), false)
 
 const mediaListener = () => undefined
 let modernListener

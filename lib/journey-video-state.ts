@@ -1,5 +1,7 @@
 const TARGET_TIME_TOLERANCE_SECONDS = 1 / 24
 const PLAYBACK_END_TOLERANCE_SECONDS = 3 / 24
+const PLAYBACK_START_FALLBACK_MS = 1_500
+const PLAYBACK_START_PROGRESS_EPSILON_SECONDS = 1 / 1000
 
 type JourneyVideoReadiness = {
   currentTime: number
@@ -19,6 +21,19 @@ type JourneyVideoPlayback = {
   paused: boolean
 }
 
+type JourneyVideoLoadState = {
+  networkState: number
+  readyState: number
+}
+
+type JourneyVideoPlaybackStart = {
+  currentTime: number
+  error: unknown
+  paused: boolean
+  readyState: number
+  seeking: boolean
+}
+
 export function canShowJourneyVideo(
   video: JourneyVideoReadiness,
   targetTime: number,
@@ -36,6 +51,23 @@ export function shouldSeekJourneyVideo(
 ) {
   return !video.seeking
     && Math.abs(video.currentTime - targetTime) > TARGET_TIME_TOLERANCE_SECONDS
+}
+
+export function shouldRequestJourneyVideoLoad(video: JourneyVideoLoadState) {
+  return video.readyState < 2 && video.networkState === 0
+}
+
+export function shouldFallbackToManualJourneyVideoPlayback(
+  video: JourneyVideoPlaybackStart,
+  playbackStartTime: number,
+  elapsedMs: number,
+) {
+  return elapsedMs >= PLAYBACK_START_FALLBACK_MS
+    && video.readyState >= 3
+    && !video.paused
+    && !video.seeking
+    && !video.error
+    && video.currentTime <= playbackStartTime + PLAYBACK_START_PROGRESS_EPSILON_SECONDS
 }
 
 export function canRetainJourneyVideoFrame(video: JourneyVideoReadiness) {
