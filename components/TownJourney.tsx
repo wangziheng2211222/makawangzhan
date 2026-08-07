@@ -1477,7 +1477,7 @@ export function TownJourney({
                       disabled={!nextChapterReady}
                       onClick={() => playNextChapter(index, robot.id)}
                     >
-                      <span>下一个</span>
+                      <span>下一章</span>
                       {!nextChapterReady ? (
                         <LoaderCircle
                           className={styles.sceneActionSpinner}
