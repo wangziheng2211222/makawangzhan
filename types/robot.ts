@@ -66,4 +66,6 @@ export type JourneyMediaSegment = {
   posterMobile?: string
   scrollWeight: number
   linger?: number
+  /** 播完后不停顿等待用户手势，直接自动接续下一段。 */
+  autoAdvance?: boolean
 }

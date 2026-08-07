@@ -88,6 +88,7 @@ export const journeySegments: JourneyMediaSegment[] = [
     ...productionMedia('dive-pipi'),
     scrollWeight: chapters[4].scrollWeight,
     linger: chapters[4].linger,
+    autoAdvance: true,
   },
   {
     id: 'connector-pipi-to-reunion',

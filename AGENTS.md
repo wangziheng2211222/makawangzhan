@@ -29,6 +29,7 @@
 - 预加载：首 3 段 fetch→blob→objectURL 后才放行加载屏；其余后台顺序下载；仅完全下载的段落可播放
 - 微信适配：视频 muted + playsInline + x5-playsinline + x5-video-player-type="h5-page"；视口用 svh 单位；触摸手势 passive:false 控制滑动播放
 - 埋点：POST `/api/analytics/events` 仅接受 `business_cta_click`（source∈chapter/chooser/reunion + https destination + sessionId）
+- 屁屁章节无 CTA 按钮：`dive-pipi` 配置 `autoAdvance: true`，播完不停顿，自动连播 connector-pipi-to-reunion → dive-reunion 直达结尾；报名入口只保留在"进入小镇"选择层与 reunion 章节
 
 ## 环境变量
 - `ANALYTICS_DATA_DIR`：埋点数据目录。未配置时开发用 `.data`，生产自动回退 `/tmp/analytics`（/tmp 非持久，可能被清理）

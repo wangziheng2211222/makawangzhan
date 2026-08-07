@@ -178,7 +178,16 @@ const WORLD_INTRO_CUES: Partial<Record<JourneyMediaSegment['id'], readonly World
       id: 'pipi-rehearses',
       lines: ['小镇另一边，', '屁屁还在艺术学院排练。'],
       startsAt: 0.74,
-      endsAt: 0.98,
+      endsAt: 1,
+    },
+  ],
+  'dive-pipi': [
+    {
+      // 与 connector-biker-rabbit-to-pipi 同 id 同文案，跨段无缝续显同一条字幕
+      id: 'pipi-rehearses',
+      lines: ['小镇另一边，', '屁屁还在艺术学院排练。'],
+      startsAt: 0,
+      endsAt: 0.2,
     },
   ],
   'connector-pipi-to-reunion': [
@@ -962,13 +971,17 @@ export function TownJourney({
         if (reachedSequenceEnd && entry.index === townConnectorIndex - 1) {
           setShowTownChoice(true)
         }
+        // autoAdvance 段落（dive-pipi）播完不停顿，直接自动接续后续段落直达结尾。
+        const autoAdvance = !reachedSequenceEnd
+          && entry.autoAdvance === true
+          && Boolean(nextEntry)
         const waitsForAction = reachedSequenceEnd
-          || (!hasSequenceNext && entry.kind === 'dive-in' && Boolean(nextEntry))
+          || (!hasSequenceNext && entry.kind === 'dive-in' && Boolean(nextEntry) && !autoAdvance)
         const nextEntryReady = !nextEntry || fullyLoadedSegmentKeysRef.current.has(
           getSegmentPreloadKey(nextEntry.id, mobile),
         )
         const waitsForMedia = !nextEntryReady
-          && (hasSequenceNext || entry.kind === 'connector')
+          && (hasSequenceNext || entry.kind === 'connector' || autoAdvance)
         const nextPosition = waitsForAction || waitsForMedia
           ? Math.max(
               entry.end - SEGMENT_BOUNDARY_ADVANCE_PX / window.innerHeight,
@@ -993,7 +1006,9 @@ export function TownJourney({
             pendingPlaybackIndexRef.current = nextEntry.index
             requestJourneyUpdate()
           }
-        } else if (!waitsForAction && entry.kind === 'connector' && nextEntry?.kind === 'dive-in') {
+        } else if (!waitsForAction && nextEntry && (
+          autoAdvance || (entry.kind === 'connector' && nextEntry.kind === 'dive-in')
+        )) {
           nextStarted = playSegmentAtIndex(nextEntry.index)
           if (!nextStarted) {
             pendingPlaybackIndexRef.current = nextEntry.index
@@ -1687,25 +1702,7 @@ export function TownJourney({
                   {chapter.description ? (
                     <p className={styles.description}>{chapter.description}</p>
                   ) : null}
-                  {chapter.id === 'pipi' ? (
-                    <a
-                      className={styles.sceneAction}
-                      href={RESIDENT_APPLICATION_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="立即报名成为玛卡小镇居民"
-                      onClick={() => {
-                        trackResidentApplicationClick(
-                          'pipi_resident_application',
-                          '立即报名',
-                          'chapter',
-                          'pipi',
-                        )
-                      }}
-                    >
-                      立即报名
-                    </a>
-                  ) : robot ? (
+                  {chapter.id === 'pipi' ? null : robot ? (
                     <button
                       type="button"
                       className={styles.sceneAction}
