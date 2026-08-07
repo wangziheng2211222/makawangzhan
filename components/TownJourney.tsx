@@ -177,8 +177,8 @@ const WORLD_INTRO_CUES: Partial<Record<JourneyMediaSegment['id'], readonly World
     {
       id: 'pipi-rehearses',
       lines: ['小镇另一边，', '屁屁还在艺术学院排练。'],
-      startsAt: 0.14,
-      endsAt: 0.56,
+      startsAt: 0.74,
+      endsAt: 0.98,
     },
   ],
   'connector-pipi-to-reunion': [
