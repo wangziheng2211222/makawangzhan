@@ -64,6 +64,9 @@
   aspect-ratio: 1 / 1.06;
   padding: 16px;
   overflow: hidden;
+  /* Solid fallback for WebViews that don't support color-mix()
+     (X5 ≤ Chromium 110, UC kernel, older WKWebView) */
+  background: var(--color-white);
   background: color-mix(in srgb, var(--robot-accent) 9%, var(--color-white));
 }
 

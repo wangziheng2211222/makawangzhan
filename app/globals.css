@@ -54,7 +54,9 @@ a {
 
 button:active,
 a:active {
-  scale: 0.98;
+  /* transform instead of standalone `scale` (Chrome 104+): older X5/UC
+     kernels ignore `scale`, losing the press feedback */
+  transform: scale(0.98);
 }
 
 a {

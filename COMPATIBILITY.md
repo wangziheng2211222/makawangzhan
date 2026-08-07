@@ -226,3 +226,39 @@
 2. **关键路径**：加载屏 → 进入小镇 → 选择"成为居民"→ 滚动/滑动浏览四位精灵 → CTA 点击跳转腾讯文档
 3. **边界场景**：弱网（3G 限速）下视频预加载体验；App 切后台再回来视频是否继续播放
 4. **回归验证**：桌面端 Chrome / Safari 滚动 scrub 模式正常
+
+---
+
+## 八、复查记录（v2 分支代码回归核对）
+
+对当前代码库逐项核对本报告第一~五章的修复项，**原有 6 项修复与 9 项既有兼容机制全部在位，无回退**：
+
+| 核对项 | 位置 | 结果 |
+|--------|------|------|
+| GA `.cn` 域名 | `app/layout.tsx:43` | ✅ 在位 |
+| WebView meta 三件套 | `app/layout.tsx:32-36` | ✅ 在位 |
+| `color-mix()` fallback（`.copy::before`） | `TownJourney.module.css:272` | ✅ 在位 |
+| `backdrop-filter` fallback ×3 | `TownJourney.module.css:373,500,708` | ✅ 在位 |
+| `overscroll-behavior: none` | `globals.css:30`、`TownJourney.module.css:54` | ✅ 在位 |
+| `sendBeacon` 加固降级链 | `lib/analytics.ts:57-63` | ✅ 在位 |
+| `randomUUID` / `sessionStorage` fallback | `lib/analytics.ts:21-41` | ✅ 在位 |
+| x5/inline 视频属性 | `JourneyVideoLayer.tsx:55-60` | ✅ 在位 |
+| blob URL 降级 | `JourneyVideoLayer.tsx:116-138` | ✅ 在位 |
+| `ended` polling 兜底 | `TownJourney.tsx:925-930` | ✅ 在位 |
+| 钉钉 rAF → setTimeout | `TownJourney.tsx:694-697` | ✅ 在位 |
+| `visibilitychange` + `pagehide` | `TownJourney.tsx:1442-1446` | ✅ 在位 |
+| `svh` + `vh` fallback | `TownJourney.module.css:3-4,49-50,790-791` | ✅ 在位 |
+
+### 本轮新发现并修复（3 项）
+
+| # | 严重度 | 问题 | 修复 |
+|---|--------|------|------|
+| 9 | 🟡 中等 | `.loadingLogo` 依赖 `aspect-ratio`（iOS 15+），iOS 14.x 下加载屏 Logo 高度塌陷为 0 不可见 | 增加 `min-height: min(25vw, 102px)` fallback（`TownJourney.module.css`） |
+| 10 | 🟢 轻微 | `RobotChooser` `.imageFrame` 的 `color-mix()` 无 fallback，X5/UC 下图片底色变浅（装饰性，无功能影响） | 增加纯色 fallback 声明（`RobotChooser.module.css`） |
+| 11 | 🟢 轻微 | `globals.css` 使用独立 `scale` 属性（Chrome 104+），老 X5/UC 下按压反馈失效 | 改为全内核支持的 `transform: scale(0.98)` |
+
+### 记录在案、暂不修复（可接受风险）
+
+- **`inset` 简写**（多处）：iOS 14.0 不支持（14.1+ 支持），2020 年 10 月后的设备均正常；逐处展开为 `top/right/bottom/left` 改动面大、回归风险高于收益。
+- **`text-wrap: balance`**（`TownJourney.module.css:306`）：不支持的浏览器静默忽略，回退为普通换行，纯视觉增强。
+- **`content-visibility` / `contain-intrinsic-size`**（`RobotChooser.module.css:46-47`）：仅 Chromium 生效的性能提示，其他内核忽略无副作用。

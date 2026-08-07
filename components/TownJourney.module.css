@@ -109,6 +109,9 @@
 
 .loadingLogo {
   width: min(80%, 328px);
+  /* Fallback height for WebViews without aspect-ratio (iOS < 15):
+     keeps the background logo visible instead of collapsing to 0 */
+  min-height: min(25vw, 102px);
   aspect-ratio: 2584 / 807;
   margin: 0 auto clamp(34px, 7vh, 72px);
   background-image: url('/images/brand/maka-planet-logo-white-cn.png');
