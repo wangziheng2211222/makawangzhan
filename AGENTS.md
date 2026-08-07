@@ -9,9 +9,10 @@
 
 ## 构建与运行
 - 安装：`pnpm install`
-- 预览/运行：`pnpm run build && pnpm run start --hostname 0.0.0.0 --port ${DEPLOY_RUN_PORT}`（.coze 已配置）
-- ⚠️ 重要：dev 模式（`next dev`）经过预览代理域名时客户端水合永不完成（无报错、React 根节点不提交，dev 专用的 eval 模块机制与代理不兼容），表现为加载进度条卡在 90%。因此预览必须使用生产模式（build + start），本地直连 localhost 时 dev 模式正常
-- 构建：`pnpm run build`；生产启动：`pnpm run start --hostname 0.0.0.0 --port ${DEPLOY_RUN_PORT}`
+- 预览/部署：`pnpm run build`（或 `build:preview` = install + build）+ `pnpm run start`（start 脚本内部从 `DEPLOY_RUN_PORT`/`PORT` 读端口，默认 3000）
+- ⚠️ 重要：dev 模式（`next dev`）经过预览代理域名时客户端水合永不完成（无报错、React 根节点不提交，dev 专用的 eval 模块机制与代理不兼容），表现为加载进度条卡在 90%。因此预览/部署必须使用生产模式（build + start），本地直连 localhost 时 dev 模式正常
+- ⚠️ .coze 的 build/run 只使用纯命令数组（如 `["pnpm","run","build"]`），不要用 `bash -c "..."` 复合命令——部署流水线无法正确解析，会在 runtime_pkg 阶段报 pnpm usage 错误
+- 构建：`pnpm run build`；生产启动：`pnpm run start`
 - 检查：`pnpm run typecheck`、`pnpm run lint`
 - 数据校验：`pnpm run test:journey`、`pnpm run test:story-scenes`
 - 端口必须从 `DEPLOY_RUN_PORT` 环境变量读取，禁止硬编码
