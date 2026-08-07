@@ -1756,7 +1756,7 @@ export function TownJourney({
               className={`${styles.sceneAction} ${styles.townChoicePrimary}`}
               onClick={meetMakaSpirits}
             >
-              <span>去见见他们</span>
+              <span>先去见见他们</span>
               <ArrowRight size={18} strokeWidth={2} aria-hidden="true" />
             </button>
             <a
