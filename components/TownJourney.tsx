@@ -434,7 +434,11 @@ export function TownJourney({
       }
 
       if (segmentPlaybackRef.current?.segmentId === segmentId) {
-        const ready = video.readyState >= 2
+        // During playback, keep video visible as long as it has any data
+        // (readyState >= 1). Only hide on actual errors. This prevents
+        // brief visibility:hidden flashes during seeks (readyState can
+        // momentarily drop to 1 during a seek on some browsers).
+        const ready = video.readyState >= 1
           && !video.error
           && video.dataset.failed !== 'true'
         if (video.dataset.ready !== String(ready)) {

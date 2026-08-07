@@ -15,7 +15,7 @@ import styles from './TownJourney.module.css'
 const allowBlobFallback = process.env.NEXT_PUBLIC_VIDEO_BLOB_FALLBACK === 'true'
 const INITIAL_PRELOAD_COUNT = 2
 const INITIAL_PRELOAD_TIMEOUT_MS = 30_000
-const MINIMUM_PRELOAD_DISPLAY_MS = 900
+const MINIMUM_PRELOAD_DISPLAY_MS = 2500
 
 export type JourneyPreloadState = {
   progress: number

@@ -87,6 +87,7 @@
   inset: 0;
   z-index: 1;
   opacity: 0;
+  transition: opacity 300ms ease;
 }
 
 .initialJourneyPoster[data-active='true'] {
@@ -208,6 +209,7 @@
   z-index: 2;
   overflow: hidden;
   pointer-events: none;
+  background: #090b13;
 }
 
 .journeyMediaSlot,
