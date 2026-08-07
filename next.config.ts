@@ -8,6 +8,12 @@ const devDomain = process.env.COZE_PROJECT_DOMAIN_DEFAULT
 const nextConfig: NextConfig = {
   devIndicators: false,
   outputFileTracingRoot: path.join(__dirname),
+  // Statically prerendered pages default to `s-maxage=31536000`, which lets
+  // CDN edges and WebView caches (especially WeChat) keep serving the HTML —
+  // and its hashed JS bundle — from a previous deployment long after a
+  // redeploy. The HTML is the version entry point, so it must revalidate
+  // every load; only content-hashed assets deserve long caching.
+  expireTime: 0,
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
