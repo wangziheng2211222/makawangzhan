@@ -50,6 +50,8 @@
   height: 100svh;
   overflow: hidden;
   background: #090b13;
+  /* 禁用橡皮筋/下拉刷新效果（WeChat、钉钉） */
+  overscroll-behavior: none;
 }
 
 .initialJourneyPoster {
@@ -265,6 +267,9 @@
 }
 
 .copy::before {
+  /* Solid fallback for WebViews that don't support color-mix()
+     (X5 ≤ Chromium 110, UC kernel, older WKWebView) */
+  background: rgb(242 243 255 / 90%);
   background: color-mix(
     in srgb,
     var(--scene-accent) 8%,
@@ -364,6 +369,8 @@
   border: 1px solid rgb(255 255 255 / 10%);
   border-radius: 999px;
   color: var(--color-white);
+  /* Solid fallback for browsers without backdrop-filter */
+  background: rgb(24 23 30 / 94%);
   background: var(--scene-action-fill);
   box-shadow:
     0 12px 30px rgb(16 12 25 / 20%),
@@ -489,6 +496,8 @@
   padding: 7px 10px;
   overflow-x: auto;
   border-radius: 999px;
+  /* Solid fallback for browsers without backdrop-filter (X5 pre-Chromium, UC) */
+  background: rgb(234 236 243 / 92%);
   background: rgb(247 248 250 / 50%);
   opacity: 0;
   pointer-events: none;
@@ -695,6 +704,8 @@
     gap: 2px;
     max-width: calc(100vw - 24px);
     padding: 5px;
+    /* Solid fallback for mobile WebViews without backdrop-filter */
+    background: rgb(239 241 247 / 96%);
     background: rgb(247 248 250 / 88%);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

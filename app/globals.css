@@ -25,6 +25,9 @@
 
 html {
   background: var(--color-page);
+  /* 禁止 WeChat/钉钉内置浏览器的下拉刷新和橡皮筋效果，
+     避免与滚动驱动视频旅程冲突 */
+  overscroll-behavior: none;
 }
 
 body {

@@ -52,8 +52,18 @@ function recordBackendEvent(event: string, payload: AnalyticsPayload) {
     payload,
   })
 
-  if (navigator.sendBeacon?.('/api/analytics/events', body)) return
+  // sendBeacon is not supported in older X5 (WeChat Android) and UC (DingTalk)
+  // kernels. Fall back through several strategies in order of reliability.
+  if (typeof navigator.sendBeacon === 'function') {
+    try {
+      if (navigator.sendBeacon('/api/analytics/events', body)) return
+    } catch {
+      // sendBeacon threw — try fetch
+    }
+  }
 
+  // keepalive fetch is the next best option, but may also be unsupported
+  // in very old WebViews. Catch and silently ignore (non-critical path).
   void fetch('/api/analytics/events', {
     method: 'POST',
     body,
