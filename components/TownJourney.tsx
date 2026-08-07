@@ -84,6 +84,7 @@ const MOBILE_SWIPE_THRESHOLD_PX = 44
 const WHEEL_GESTURE_IDLE_MS = 180
 const SEGMENT_BOUNDARY_ADVANCE_PX = 2
 const PLAYBACK_START_FALLBACK_MS = 100
+const PLAYBACK_FRAME_INTERVAL_MS = 33
 const LOADING_VISUAL_INITIAL_PROGRESS = 0.03
 const LOADING_VISUAL_PROGRESS_CAP = 0.9
 const LOADING_PROGRESS_READY_CAP = 0.96
@@ -851,10 +852,11 @@ export function TownJourney({
         video.dataset.manualPlayback = 'true'
         video.pause()
         let lastTick = performance.now()
-        const tick = (ts: number) => {
+        const tick = () => {
           if (segmentPlaybackRef.current !== playback) return
-          const delta = Math.min((ts - lastTick) / 1000, 0.1)
-          lastTick = ts
+          const now = performance.now()
+          const delta = Math.min((now - lastTick) / 1000, 0.1)
+          lastTick = now
           const duration = video.duration
           if (Number.isFinite(duration) && duration > 0) {
             const newTime = Math.min(video.currentTime + delta, duration)
@@ -868,9 +870,9 @@ export function TownJourney({
               return
             }
           }
-          manualFrameId = window.requestAnimationFrame(tick)
+          manualFrameId = window.setTimeout(tick, PLAYBACK_FRAME_INTERVAL_MS)
         }
-        manualFrameId = window.requestAnimationFrame(tick)
+        manualFrameId = window.setTimeout(tick, PLAYBACK_FRAME_INTERVAL_MS)
       }
 
       const updatePlayback = () => {
@@ -887,17 +889,18 @@ export function TownJourney({
         renderJourneyFrame(progress)
       }
 
-      const renderPlaybackFrame = (timestamp: number) => {
+      const renderPlaybackFrame = () => {
         if (segmentPlaybackRef.current !== playback) return
+        const now = performance.now()
         if (!manualPlaybackActive && nativePlaybackStartedAt !== null) {
           if (video.currentTime > nativePlaybackStartTime + SCRUB_EPSILON) {
             nativePlaybackStartedAt = null
-          } else if (timestamp - nativePlaybackStartedAt >= PLAYBACK_START_FALLBACK_MS) {
+          } else if (now - nativePlaybackStartedAt >= PLAYBACK_START_FALLBACK_MS) {
             startManualPlayback()
           }
         }
         updatePlayback()
-        renderFrameId = window.requestAnimationFrame(renderPlaybackFrame)
+        renderFrameId = window.setTimeout(renderPlaybackFrame, PLAYBACK_FRAME_INTERVAL_MS)
       }
 
       const cleanup = () => {
@@ -908,11 +911,11 @@ export function TownJourney({
         video.removeEventListener('abort', failPlayback)
         video.removeEventListener('emptied', failPlayback)
         if (renderFrameId !== null) {
-          window.cancelAnimationFrame(renderFrameId)
+          window.clearTimeout(renderFrameId)
           renderFrameId = null
         }
         if (manualFrameId !== null) {
-          window.cancelAnimationFrame(manualFrameId)
+          window.clearTimeout(manualFrameId)
           manualFrameId = null
         }
       }
@@ -1029,7 +1032,7 @@ export function TownJourney({
       video.addEventListener('error', failPlayback, { once: true })
       video.addEventListener('abort', failPlayback, { once: true })
       video.addEventListener('emptied', failPlayback, { once: true })
-      renderFrameId = window.requestAnimationFrame(renderPlaybackFrame)
+      renderFrameId = window.setTimeout(renderPlaybackFrame, PLAYBACK_FRAME_INTERVAL_MS)
 
       try {
         nativePlaybackStartTime = video.currentTime
