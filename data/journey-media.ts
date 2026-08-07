@@ -3,7 +3,7 @@ import { validateJourneyMedia } from '@/lib/validate-journey-media'
 import type { JourneyMediaSegment } from '@/types/robot'
 
 const mediaSource = (name: string) => process.env[`NEXT_PUBLIC_MEDIA_${name}`] || undefined
-const MOBILE_COMPATIBILITY_CACHE_VERSION = '20260807-main40'
+const MOBILE_COMPATIBILITY_CACHE_VERSION = '20260807-720p-main40-crf22'
 const VERSIONED_MOBILE_VIDEO_IDS = new Set([
   'dive-town',
   'connector-little-devil-to-biker-rabbit',

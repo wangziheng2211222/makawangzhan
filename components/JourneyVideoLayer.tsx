@@ -13,7 +13,7 @@ import type { JourneyMediaSegment } from '@/types/robot'
 import styles from './TownJourney.module.css'
 
 const allowBlobFallback = process.env.NEXT_PUBLIC_VIDEO_BLOB_FALLBACK === 'true'
-const INITIAL_PRELOAD_COUNT = 3
+const INITIAL_PRELOAD_COUNT = 4
 const INITIAL_PRELOAD_TIMEOUT_MS = 30_000
 const MINIMUM_PRELOAD_DISPLAY_MS = 2500
 

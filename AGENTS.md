@@ -22,11 +22,11 @@
 - `components/` — `TownJourney.tsx`（主旅程，滚动驱动视频 scrub）、`JourneyVideoLayer.tsx`（视频层，blob 预加载）、`RobotChooser.tsx`、`SiteFooter.tsx`
 - `data/` — `journey-media.ts`（11 段旅程视频配置）、`robots.ts`（章节与角色文案）
 - `lib/` — `journey-timeline.ts`（滚动→时间轴映射）、`journey-video-state.ts`（播放状态机）、`server/analytics-store.ts`（JSONL 埋点存储）
-- `public/media/journey/{desktop,mobile}/` — 24 个 MP4（桌面 61MB / 移动 31MB）；`public/images/` 海报图
+- `public/media/journey/{desktop,mobile}/` — 24 个 MP4（桌面 61MB / 移动 19MB）；`public/images/` 海报图
 
 ## 关键机制
 - 双端资源：媒体查询 `(max-width: 800px)` 判定移动端（`lib/journey-media-query.ts`），加载对应视频
-- 预加载：首 3 段 fetch 完整下载后才放行加载屏；其余立即在后台顺序下载；“下一个”会等到下一可操作节点前的完整播放链全部下载后才解锁
+- 预加载：首 4 段 fetch 完整下载后才放行加载屏；其余立即在后台顺序下载；“下一个”会等到下一可操作节点前的完整播放链全部下载后才解锁
 - 视频源：桌面端用 fetch→blob→objectURL 作 `<video>` src；移动端（含微信）改用直连 URL——微信 X5/WKWebView 无法解码 blob: 视频（加载完成后黑屏、不报错）。fetch 预加载在移动端仍保留，仅用于进度/播放门禁/HTTP 缓存预热（`/media/journey/**` 已配 `Cache-Control: public, max-age=86400`，视频元素二次请求可命中缓存）
 - 首帧防黑屏：首帧海报层级在视频层之上（z3，视频层 z2、文案层 z4），直到首个视频 readyState≥2 才按显示模式锁存隐藏；挂载后同步渲染首帧，不依赖 rAF（部分 WebView 首次交互前暂停 rAF）
 - 微信适配：视频 muted + playsInline + x5-playsinline + x5-video-player-type="h5-page"；视口用 svh 单位；触摸手势 passive:false 控制滑动播放
