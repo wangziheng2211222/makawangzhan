@@ -1684,12 +1684,7 @@ export function TownJourney({
                       ) : chapter.title}
                     </h2>
                   )}
-                  {robot ? (
-                    <p className={styles.description}>
-                      {robot.archetype}
-                      {chapter.description ? `。${chapter.description}` : null}
-                    </p>
-                  ) : chapter.description ? (
+                  {chapter.description ? (
                     <p className={styles.description}>{chapter.description}</p>
                   ) : null}
                   {chapter.id === 'pipi' ? (
