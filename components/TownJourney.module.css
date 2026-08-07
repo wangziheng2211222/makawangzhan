@@ -11,18 +11,6 @@
   inherits: false;
 }
 
-@property --loading-simulated-progress {
-  syntax: '<percentage>';
-  initial-value: 3%;
-  inherits: true;
-}
-
-@property --loading-simulated-number {
-  syntax: '<integer>';
-  initial-value: 3;
-  inherits: true;
-}
-
 @keyframes sceneActionBeam {
   to {
     --scene-action-beam-angle: 360deg;
@@ -32,23 +20,6 @@
 @keyframes sceneActionSpinner {
   to {
     transform: rotate(1turn);
-  }
-}
-
-@keyframes loadingSimulatedProgress {
-  0% {
-    --loading-simulated-progress: 3%;
-    --loading-simulated-number: 3;
-  }
-
-  55% {
-    --loading-simulated-progress: 68%;
-    --loading-simulated-number: 68;
-  }
-
-  100% {
-    --loading-simulated-progress: 90%;
-    --loading-simulated-number: 90;
   }
 }
 
@@ -110,10 +81,6 @@
   transition: opacity 500ms ease, visibility 500ms ease;
 }
 
-.loadingScreen[data-ready='false'] {
-  animation: loadingSimulatedProgress 12s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
-}
-
 .loadingScreen::before {
   position: absolute;
   inset: -2%;
@@ -127,9 +94,6 @@
 }
 
 .loadingScreen[data-ready='true'] {
-  --loading-simulated-progress: 100%;
-  --loading-simulated-number: 100;
-
   visibility: hidden;
   opacity: 0;
   pointer-events: none;
@@ -162,18 +126,6 @@
   line-height: 1.4;
 }
 
-.loadingProgressMeta span:last-child {
-  min-width: 4ch;
-  color: var(--color-white);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-.loadingProgressValue::after {
-  counter-reset: loading-progress var(--loading-simulated-number);
-  content: counter(loading-progress) '%';
-}
-
 .loadingTrack {
   width: min(76%, 260px);
   height: 3px;
@@ -186,7 +138,6 @@
   display: block;
   width: 0;
   height: 100%;
-  min-width: var(--loading-simulated-progress);
   background: var(--color-white);
   transition: width 160ms ease;
 }

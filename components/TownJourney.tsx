@@ -817,7 +817,7 @@ export function TownJourney({
       if (!video) return false
       if (video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
         video.preload = 'auto'
-        if (video.networkState === HTMLMediaElement.NETWORK_EMPTY) video.load()
+        video.load()
         return false
       }
 
@@ -1067,21 +1067,35 @@ export function TownJourney({
 
   useEffect(() => {
     const pendingIndex = pendingPlaybackIndexRef.current
+    if (pendingIndex === null) return
     const pendingIsCurrentOrNext = pendingIndex === activeSegmentIndex
       || pendingIndex === activeSegmentIndex + 1
-    if (pendingIndex === null || !pendingIsCurrentOrNext) return
-    if (playSegmentAtIndex(pendingIndex)) pendingPlaybackIndexRef.current = null
+    if (!pendingIsCurrentOrNext) return
+    if (playSegmentAtIndex(pendingIndex)) {
+      pendingPlaybackIndexRef.current = null
+      return
+    }
 
-    if (pendingPlaybackIndexRef.current === null) return
-    const retryFrame = window.requestAnimationFrame(() => {
-      if (
-        pendingPlaybackIndexRef.current === pendingIndex
-        && playSegmentAtIndex(pendingIndex)
-      ) {
-        pendingPlaybackIndexRef.current = null
+    // Poll until the video is ready (some WebViews ignore preload and delay
+    // loadeddata events, so a single requestAnimationFrame retry is not enough).
+    const intervalId = window.setInterval(() => {
+      if (pendingPlaybackIndexRef.current !== pendingIndex) {
+        window.clearInterval(intervalId)
+        return
       }
-    })
-    return () => window.cancelAnimationFrame(retryFrame)
+      if (playSegmentAtIndex(pendingIndex)) {
+        pendingPlaybackIndexRef.current = null
+        window.clearInterval(intervalId)
+      }
+    }, 200)
+    const timeoutId = window.setTimeout(() => {
+      window.clearInterval(intervalId)
+    }, 10_000)
+
+    return () => {
+      window.clearInterval(intervalId)
+      window.clearTimeout(timeoutId)
+    }
   }, [activeSegmentIndex, fullyLoadedSegmentKeys, playSegmentAtIndex, videoRevision])
 
   const startSegmentPlayback = useCallback(
@@ -1745,7 +1759,9 @@ export function TownJourney({
               <span className="srOnly">玛卡星球</span>
               <div className={styles.loadingProgressMeta}>
                 <span>{loadingVisualReady ? '旅程就绪' : '正在进入玛卡星球'}</span>
-                <span className={styles.loadingProgressValue} aria-hidden="true" />
+                <span className={styles.loadingProgressValue} aria-hidden="true">
+                  {Math.round(displayedPreloadProgress * 100)}%
+                </span>
               </div>
               <div
                 className={styles.loadingTrack}
