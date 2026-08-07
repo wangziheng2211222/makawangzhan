@@ -661,9 +661,9 @@ export function TownJourney({
     if (initialMediaReady) return
 
     const startedAt = performance.now()
-    let animationFrame: number
-    const updateDisplayedProgress = (timestamp: number) => {
-      const elapsed = timestamp - startedAt
+    let timeoutId: number
+    const updateDisplayedProgress = () => {
+      const elapsed = performance.now() - startedAt
       const simulatedProgress = LOADING_VISUAL_INITIAL_PROGRESS + (
         LOADING_VISUAL_PROGRESS_CAP - LOADING_VISUAL_INITIAL_PROGRESS
       ) * (
@@ -676,11 +676,14 @@ export function TownJourney({
       setDisplayedPreloadProgress((current) => (
         Math.max(current, target)
       ))
-      animationFrame = window.requestAnimationFrame(updateDisplayedProgress)
+      timeoutId = window.setTimeout(updateDisplayedProgress, 50)
     }
 
-    animationFrame = window.requestAnimationFrame(updateDisplayedProgress)
-    return () => window.cancelAnimationFrame(animationFrame)
+    // Use setTimeout instead of requestAnimationFrame because some WebViews
+    // (e.g. DingTalk) pause rAF when the page is considered "inactive"
+    // until the user touches the screen.
+    timeoutId = window.setTimeout(updateDisplayedProgress, 50)
+    return () => window.clearTimeout(timeoutId)
   }, [initialMediaReady, showLoadingScreen])
 
   useEffect(() => {
