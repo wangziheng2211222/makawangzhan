@@ -114,7 +114,7 @@ const WORLD_INTRO_CUES: Partial<Record<JourneyMediaSegment['id'], readonly World
   'connector-town-to-jiuka': [
     {
       id: 'shimmer-arrives',
-      lines: ['那就先去找，', '最容易迷路的那一位。'],
+      lines: ['那就先去找，', '人间小清醒的那一位。'],
       startsAt: 0.04,
       endsAt: 0.3,
     },
