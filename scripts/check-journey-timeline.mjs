@@ -6,6 +6,7 @@ import {
   getBikerRabbitCopyOpacity,
   getJourneyFrame,
   getPipiCopyOpacity,
+  getRequiredChapterAdvanceSegments,
   getRobotCopyOpacity,
   getTownCopyOpacity,
   lingerEase,
@@ -47,6 +48,7 @@ const segments = ids.map((id, index) => ({
   posterMobile: `/images/mobile/${id}.jpg`,
   scrollWeight: index % 2 === 0 ? 1.2 : 0.75,
   linger: index % 2 === 0 ? 0.35 : undefined,
+  autoAdvance: id === 'dive-pipi' ? true : undefined,
 }))
 
 assert.deepEqual(validateJourneyMedia(segments), [])
@@ -56,6 +58,24 @@ assert.equal(findConnectorSegmentIndex(segments, 0), 1)
 assert.equal(findConnectorSegmentIndex(segments, 1), 3)
 assert.equal(findConnectorSegmentIndex(segments, 4), 9)
 assert.equal(findConnectorSegmentIndex(segments, 5), -1)
+assert.deepEqual(
+  getRequiredChapterAdvanceSegments(segments, 1).map((segment) => segment.id),
+  ['connector-jiuka-to-little-devil', 'dive-little-devil'],
+)
+assert.deepEqual(
+  getRequiredChapterAdvanceSegments(segments, 2).map((segment) => segment.id),
+  ['connector-little-devil-to-biker-rabbit', 'dive-biker-rabbit'],
+)
+assert.deepEqual(
+  getRequiredChapterAdvanceSegments(segments, 3).map((segment) => segment.id),
+  [
+    'connector-biker-rabbit-to-pipi',
+    'dive-pipi',
+    'connector-pipi-to-reunion',
+    'dive-reunion',
+  ],
+)
+assert.deepEqual(getRequiredChapterAdvanceSegments(segments, 5), [])
 
 const { entries, totalWeight } = buildSegmentTimeline(segments)
 assert.equal(totalWeight, 10.95)

@@ -25,6 +25,7 @@ import {
   getBikerRabbitCopyOpacity,
   getJourneyFrame,
   getPipiCopyOpacity,
+  getRequiredChapterAdvanceSegments,
   getRobotCopyOpacity,
   getTownCopyOpacity,
 } from '@/lib/journey-timeline'
@@ -439,9 +440,10 @@ export function TownJourney({
     requiredSegments: JourneyMediaSegment[],
   ) => {
     if (mobile === null || requiredSegments.length === 0) return false
-    const segmentsToCheck = mobile ? requiredSegments.slice(0, 1) : requiredSegments
-    return segmentsToCheck.every((segment) => isSegmentReadyForPlayback(segment.id))
-  }, [isSegmentReadyForPlayback, mobile])
+    return requiredSegments.every((segment) => (
+      fullyLoadedSegmentKeysRef.current.has(getSegmentPreloadKey(segment.id, mobile))
+    ))
+  }, [mobile])
 
   const renderJourneyFrame = useCallback((progress: number) => {
     const journey = journeyRef.current
@@ -1278,7 +1280,7 @@ export function TownJourney({
       const connectorIndex = findConnectorSegmentIndex(segments, chapterIndex)
       if (connectorIndex < 0) return
 
-      const requiredSegments = segments.slice(connectorIndex, connectorIndex + 2)
+      const requiredSegments = getRequiredChapterAdvanceSegments(segments, chapterIndex)
       const nextChapterReady = reducedMotion === true || (
         areSegmentsReadyForChapterAdvance(requiredSegments)
       )
@@ -1718,10 +1720,7 @@ export function TownJourney({
             const robot = chapter.robotId
               ? robots.find((item) => item.id === chapter.robotId)
               : undefined
-            const connectorIndex = findConnectorSegmentIndex(segments, index)
-            const requiredNextSegments = connectorIndex >= 0
-              ? segments.slice(connectorIndex, connectorIndex + 2)
-              : []
+            const requiredNextSegments = getRequiredChapterAdvanceSegments(segments, index)
             const nextChapterReady = reducedMotion === true || (
               areSegmentsReadyForChapterAdvance(requiredNextSegments)
             )

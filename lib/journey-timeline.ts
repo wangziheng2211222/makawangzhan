@@ -80,6 +80,23 @@ export function findConnectorSegmentIndex(
   )
 }
 
+export function getRequiredChapterAdvanceSegments(
+  segments: JourneyMediaSegment[],
+  chapterIndex: number,
+) {
+  const connectorIndex = findConnectorSegmentIndex(segments, chapterIndex)
+  if (connectorIndex < 0) return []
+
+  let endExclusive = connectorIndex + 2
+  while (
+    endExclusive < segments.length
+    && segments[endExclusive - 1]?.autoAdvance === true
+  ) {
+    endExclusive += 2
+  }
+  return segments.slice(connectorIndex, endExclusive)
+}
+
 function getEntryLocalProgress(entry: SegmentTimelineEntry, position: number) {
   return clamp((position - entry.start) / entry.scrollWeight)
 }

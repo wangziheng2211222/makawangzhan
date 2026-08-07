@@ -356,6 +356,16 @@ export function JourneyVideoLayer({
         await initialPreload
       }
 
+      for (const asset of initialAssets) {
+        if (cancelled) return
+        if (loadedAssetIds.has(asset.id)) continue
+        const loaded = await preloadAsset(asset, backgroundController.signal)
+        if (!loaded && !cancelled) {
+          await preloadAsset(asset, backgroundController.signal)
+        }
+        if (!loadedAssetIds.has(asset.id)) return
+      }
+
       const remainingDisplayTime = MINIMUM_PRELOAD_DISPLAY_MS
         - (Date.now() - preloadStartedAt)
       if (remainingDisplayTime > 0) {
