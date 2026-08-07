@@ -76,6 +76,10 @@ function getEntryLocalProgress(entry: SegmentTimelineEntry, position: number) {
   return clamp((position - entry.start) / entry.scrollWeight)
 }
 
+/** Small overlap (in scroll-weight units) so the outgoing segment fades out
+ *  while the incoming segment is already visible — prevents black flash. */
+const SEGMENT_CROSSFADE_WEIGHT = 0.04
+
 function getSegmentOpacity(
   entries: SegmentTimelineEntry[],
   index: number,
@@ -83,9 +87,19 @@ function getSegmentOpacity(
 ) {
   const entry = entries[index]
   const includesEnd = index === entries.length - 1
-  return position >= entry.start && (position < entry.end || (includesEnd && position <= entry.end))
-    ? 1
-    : 0
+
+  // Fully visible during own range
+  if (position >= entry.start && (position < entry.end || (includesEnd && position <= entry.end))) {
+    return 1
+  }
+
+  // Crossfade tail: stays partially visible just after end so the next
+  // segment's video has time to show its first frame before this one disappears.
+  if (!includesEnd && position > entry.end && position < entry.end + SEGMENT_CROSSFADE_WEIGHT) {
+    return 1 - clamp((position - entry.end) / SEGMENT_CROSSFADE_WEIGHT)
+  }
+
+  return 0
 }
 
 export function getJourneyFrame(

@@ -746,20 +746,14 @@ export function TownJourney({
         previousFrameTimeRef.current = null
       }
 
-      if (video.currentTime > SCRUB_EPSILON) video.currentTime = 0
-      video.dataset.failed = 'false'
-      video.dataset.ready = 'true'
-
       const startPosition = Math.min(
         entry.start + (entry.index === 0 ? 0 : SEGMENT_BOUNDARY_ADVANCE_PX / window.innerHeight),
         entry.end,
       )
       const playbackWeight = Math.max(entry.end - startPosition, 0)
       const startProgress = startPosition / totalScrollWeight
-      targetProgressRef.current = startProgress
-      renderedProgressRef.current = startProgress
-      renderJourneyFrame(startProgress)
 
+      // --- Define closures before creating the playback object ---
       const updatePlayback = () => {
         const duration = video.duration
         const mediaProgress = Number.isFinite(duration) && duration > 0
@@ -811,27 +805,28 @@ export function TownJourney({
         const nextProgress = entry.index === segmentTimeline.entries.length - 1
           ? 1
           : nextPosition / totalScrollWeight
-        setJourneyProgress(nextProgress)
 
+        // Start next segment BEFORE setJourneyProgress so the new video is
+        // already in playback mode (data-ready stays 'true') when the frame
+        // renders — prevents black flash at segment boundaries.
+        let nextStarted = false
         if (reachedSequenceEnd) {
           playbackSequenceEndIndexRef.current = null
-          return
-        }
-        if (hasSequenceNext && nextEntry) {
-          if (!playSegmentAtIndex(nextEntry.index)) {
+        } else if (hasSequenceNext && nextEntry) {
+          nextStarted = playSegmentAtIndex(nextEntry.index)
+          if (!nextStarted) {
             pendingPlaybackIndexRef.current = nextEntry.index
             requestJourneyUpdate()
           }
-          return
-        }
-        if (waitsForAction) return
-        if (entry.kind === 'connector' && nextEntry?.kind === 'dive-in') {
-          if (!playSegmentAtIndex(nextEntry.index)) {
+        } else if (!waitsForAction && entry.kind === 'connector' && nextEntry?.kind === 'dive-in') {
+          nextStarted = playSegmentAtIndex(nextEntry.index)
+          if (!nextStarted) {
             pendingPlaybackIndexRef.current = nextEntry.index
             requestJourneyUpdate()
           }
-          return
         }
+
+        setJourneyProgress(nextProgress)
       }
 
       const failPlayback = () => {
@@ -862,6 +857,10 @@ export function TownJourney({
         resumeInterruptedPlayback()
       }
 
+      // --- Create playback object and set ref BEFORE renderJourneyFrame ---
+      // This ensures renderJourneyFrame uses the playback path (readyState
+      // check) instead of the scrubbing path (which may set data-ready='false'
+      // during a seek, causing visibility:hidden → black flash).
       const playback: SegmentPlayback = {
         cleanup,
         finish: finishPlayback,
@@ -869,6 +868,17 @@ export function TownJourney({
         video,
       }
       segmentPlaybackRef.current = playback
+
+      // --- Set up video and render ---
+      if (video.currentTime > SCRUB_EPSILON) video.currentTime = 0
+      video.dataset.failed = 'false'
+      video.dataset.ready = 'true'
+
+      targetProgressRef.current = startProgress
+      renderedProgressRef.current = startProgress
+      renderJourneyFrame(startProgress)
+
+      // --- Attach event listeners and start playback ---
       video.addEventListener('timeupdate', updatePlayback)
       video.addEventListener('ended', finishPlayback, { once: true })
       video.addEventListener('pause', finishPlaybackFromPause)

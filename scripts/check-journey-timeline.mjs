@@ -62,12 +62,16 @@ assert.equal(boundaryFrame.segments.length, 1)
 assert.equal(boundaryFrame.segments[0].id, 'connector-town-to-jiuka')
 assert.equal(boundaryFrame.segments[0].opacity, 1)
 
+// With crossfade, a position just past a boundary may show 2 segments:
+// the outgoing one fading out and the incoming one at full opacity.
 for (let step = 0; step <= 100; step += 1) {
   const progress = step / 100
   const frame = getJourneyFrame(progress, segments, 6)
   assert.deepEqual(frame, getJourneyFrame(progress, segments, 6))
-  assert.equal(frame.segments.length, 1)
-  assert.equal(frame.segments[0].opacity, 1)
+  assert.ok(frame.segments.length >= 1 && frame.segments.length <= 2,
+    `expected 1-2 segments at progress ${progress}, got ${frame.segments.length}`)
+  const fullOpacitySegment = frame.segments.find((s) => s.opacity === 1)
+  assert.ok(fullOpacitySegment, `expected at least one segment with opacity 1 at progress ${progress}`)
 }
 
 let previousLingerValue = 0
