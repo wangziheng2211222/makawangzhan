@@ -26,6 +26,13 @@ type JourneyVideoLoadState = {
   readyState: number
 }
 
+type JourneyVideoPlaybackReadiness = Pick<
+  JourneyVideoReadiness,
+  'dataset' | 'error' | 'readyState'
+>
+
+export type JourneyChapterAdvanceStatus = 'loading' | 'failed' | null
+
 type JourneyVideoPlaybackStart = {
   currentTime: number
   error: unknown
@@ -53,8 +60,42 @@ export function shouldSeekJourneyVideo(
     && Math.abs(video.currentTime - targetTime) > TARGET_TIME_TOLERANCE_SECONDS
 }
 
-export function shouldRequestJourneyVideoLoad(video: JourneyVideoLoadState) {
-  return video.readyState < 2 && video.networkState === 0
+export function canStartJourneyVideoPlayback(video: JourneyVideoPlaybackReadiness) {
+  return video.readyState >= 2
+    && !video.error
+    && video.dataset.failed !== 'true'
+}
+
+export function isJourneySegmentReadyForPlayback(
+  mobile: boolean,
+  preloadReady: boolean,
+  video?: JourneyVideoPlaybackReadiness,
+) {
+  if (video) return canStartJourneyVideoPlayback(video)
+  return !mobile && preloadReady
+}
+
+export function getJourneyChapterAdvanceButtonState(
+  preloadReady: boolean,
+  status: JourneyChapterAdvanceStatus,
+) {
+  const busy = !preloadReady || status === 'loading'
+  return {
+    busy,
+    disabled: busy,
+    label: status === 'failed' ? '重试' : '下一个',
+  }
+}
+
+export function shouldRequestJourneyVideoLoad(
+  video: JourneyVideoLoadState,
+  force = false,
+) {
+  if (force) return true
+  return video.readyState < 2 && (
+    video.networkState === 0
+    || video.networkState === 1
+  )
 }
 
 export function shouldFallbackToManualJourneyVideoPlayback(

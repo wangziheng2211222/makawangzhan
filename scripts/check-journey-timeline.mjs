@@ -12,9 +12,12 @@ import {
   lingerEase,
 } from '../lib/journey-timeline.ts'
 import {
+  canStartJourneyVideoPlayback,
   canRetainJourneyVideoFrame,
   canShowJourneyVideo,
+  getJourneyChapterAdvanceButtonState,
   hasCompletedJourneyVideoPlayback,
+  isJourneySegmentReadyForPlayback,
   shouldFallbackToManualJourneyVideoPlayback,
   shouldRequestJourneyVideoLoad,
   shouldSeekJourneyVideo,
@@ -79,6 +82,11 @@ assert.deepEqual(getRequiredChapterAdvanceSegments(segments, 5), [])
 
 const { entries, totalWeight } = buildSegmentTimeline(segments)
 assert.equal(totalWeight, 10.95)
+assert.equal(
+  entries.findIndex((entry) => entry.id === 'dive-reunion'),
+  findConnectorSegmentIndex(segments, 3)
+    + getRequiredChapterAdvanceSegments(segments, 3).length - 1,
+)
 
 const firstBoundary = entries[0].end
 const boundaryProgress = firstBoundary / totalWeight
@@ -157,6 +165,18 @@ assert.equal(canShowJourneyVideo({ ...readyVideo, error: new Error('decode faile
 assert.equal(canShowJourneyVideo({ ...readyVideo, dataset: { failed: 'true' } }, 1.5), false)
 assert.equal(canShowJourneyVideo({ ...readyVideo, currentTime: 1.6 }, 1.5), false)
 assert.equal(canShowJourneyVideo({ ...readyVideo, currentTime: 1.54 }, 1.5), true)
+assert.equal(canStartJourneyVideoPlayback(readyVideo), true)
+assert.equal(canStartJourneyVideoPlayback({
+  ...readyVideo,
+  dataset: { failed: 'true' },
+}), false)
+assert.equal(isJourneySegmentReadyForPlayback(true, true, readyVideo), true)
+assert.equal(isJourneySegmentReadyForPlayback(true, true, {
+  ...readyVideo,
+  dataset: { failed: 'true' },
+}), false)
+assert.equal(isJourneySegmentReadyForPlayback(true, true), false)
+assert.equal(isJourneySegmentReadyForPlayback(false, true), true)
 assert.equal(shouldSeekJourneyVideo(readyVideo, 1.6), true)
 assert.equal(shouldSeekJourneyVideo({ ...readyVideo, seeking: true }, 1.6), false)
 assert.equal(shouldSeekJourneyVideo(readyVideo, 1.54), false)
@@ -228,8 +248,25 @@ assert.equal(shouldResumeJourneyVideoPlayback({
 }), false)
 
 assert.equal(shouldRequestJourneyVideoLoad({ readyState: 0, networkState: 0 }), true)
+assert.equal(shouldRequestJourneyVideoLoad({ readyState: 1, networkState: 1 }), true)
 assert.equal(shouldRequestJourneyVideoLoad({ readyState: 0, networkState: 2 }), false)
+assert.equal(shouldRequestJourneyVideoLoad({ readyState: 0, networkState: 3 }), false)
+assert.equal(shouldRequestJourneyVideoLoad({ readyState: 0, networkState: 3 }, true), true)
 assert.equal(shouldRequestJourneyVideoLoad({ readyState: 2, networkState: 0 }), false)
+assert.equal(shouldRequestJourneyVideoLoad({ readyState: 2, networkState: 3 }, true), true)
+
+assert.deepEqual(
+  getJourneyChapterAdvanceButtonState(false, null),
+  { busy: true, disabled: true, label: '下一个' },
+)
+assert.deepEqual(
+  getJourneyChapterAdvanceButtonState(true, 'loading'),
+  { busy: true, disabled: true, label: '下一个' },
+)
+assert.deepEqual(
+  getJourneyChapterAdvanceButtonState(true, 'failed'),
+  { busy: false, disabled: false, label: '重试' },
+)
 
 const pendingPlaybackVideo = {
   currentTime: 0,
