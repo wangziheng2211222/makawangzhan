@@ -758,6 +758,36 @@ export function TownJourney({
       const startProgress = startPosition / totalScrollWeight
 
       // --- Define closures before creating the playback object ---
+      let manualFrameId: number | null = null
+      let playbackMonitoring = false
+
+      const startManualPlayback = () => {
+        if (segmentPlaybackRef.current !== playback) return
+        if (manualFrameId !== null) return // already in manual mode
+        let lastTick = performance.now()
+        const tick = (ts: number) => {
+          if (segmentPlaybackRef.current !== playback) return
+          const delta = (ts - lastTick) / 1000
+          lastTick = ts
+          const duration = video.duration
+          if (Number.isFinite(duration) && duration > 0) {
+            const newTime = Math.min(video.currentTime + delta, duration)
+            try {
+              video.currentTime = newTime
+            } catch {
+              // ignore seek errors
+            }
+            updatePlayback()
+            if (newTime >= duration - SCRUB_EPSILON) {
+              finishPlayback()
+              return
+            }
+          }
+          manualFrameId = window.requestAnimationFrame(tick)
+        }
+        manualFrameId = window.requestAnimationFrame(tick)
+      }
+
       const updatePlayback = () => {
         const duration = video.duration
         const mediaProgress = Number.isFinite(duration) && duration > 0
@@ -779,6 +809,10 @@ export function TownJourney({
         video.removeEventListener('error', failPlayback)
         video.removeEventListener('abort', failPlayback)
         video.removeEventListener('emptied', failPlayback)
+        if (manualFrameId !== null) {
+          window.cancelAnimationFrame(manualFrameId)
+          manualFrameId = null
+        }
       }
 
       const finishPlayback = () => {
@@ -892,13 +926,35 @@ export function TownJourney({
 
       try {
         const playbackPromise = video.play()
+
+        // Monitor whether the video actually starts advancing. Some in-app
+        // browsers (DingTalk, certain WebView versions) resolve play() without
+        // error but the video never fires timeupdate — the frame is frozen.
+        // If no timeupdate fires within 600ms, fall back to manual playback
+        // which advances currentTime via requestAnimationFrame.
+        const onMonitoredTimeUpdate = () => {
+          playbackMonitoring = true
+        }
+        video.addEventListener('timeupdate', onMonitoredTimeUpdate, { once: true })
+        window.setTimeout(() => {
+          if (segmentPlaybackRef.current !== playback) return
+          if (playbackMonitoring) return
+          // Video didn't start advancing — switch to manual playback.
+          startManualPlayback()
+        }, 600)
+
         window.setTimeout(resumeInterruptedPlayback, 250)
         if (playbackPromise) {
           playbackPromise
             .then(() => {
               if (segmentPlaybackRef.current === playback) updatePlayback()
             })
-            .catch(failPlayback)
+            .catch(() => {
+              // play() rejected — try manual playback instead of giving up.
+              if (segmentPlaybackRef.current === playback) {
+                startManualPlayback()
+              }
+            })
         } else {
           updatePlayback()
         }
