@@ -3,7 +3,9 @@ import assert from 'node:assert/strict'
 import {
   buildSegmentTimeline,
   findConnectorSegmentIndex,
+  getBikerRabbitCopyOpacity,
   getJourneyFrame,
+  getPipiCopyOpacity,
   getRobotCopyOpacity,
   getTownCopyOpacity,
   lingerEase,
@@ -48,6 +50,7 @@ const segments = ids.map((id, index) => ({
 assert.deepEqual(validateJourneyMedia(segments), [])
 assert.equal(segments.filter((segment) => segment.kind === 'dive-in').length, 6)
 assert.equal(segments.filter((segment) => segment.kind === 'connector').length, 5)
+assert.equal(findConnectorSegmentIndex(segments, 0), 1)
 assert.equal(findConnectorSegmentIndex(segments, 1), 3)
 assert.equal(findConnectorSegmentIndex(segments, 4), 9)
 assert.equal(findConnectorSegmentIndex(segments, 5), -1)
@@ -61,6 +64,19 @@ const boundaryFrame = getJourneyFrame(boundaryProgress, segments, 6)
 assert.equal(boundaryFrame.segments.length, 1)
 assert.equal(boundaryFrame.segments[0].id, 'connector-town-to-jiuka')
 assert.equal(boundaryFrame.segments[0].opacity, 1)
+
+const firstRobotDiveFrame = getJourneyFrame(
+  (entries[2].start + 0.01) / totalWeight,
+  segments,
+  6,
+)
+const firstRobotActiveSegment = firstRobotDiveFrame.segments.find(
+  (segment) => segment.index === firstRobotDiveFrame.activeSegmentIndex,
+)
+assert.ok(firstRobotActiveSegment)
+assert.equal(firstRobotActiveSegment.id, 'dive-jiuka')
+assert.ok(firstRobotActiveSegment.mediaProgress < 0.05)
+assert.equal(firstRobotDiveFrame.chapters[1].progress, 1)
 
 // With crossfade, a position just past a boundary may show 2 segments:
 // the outgoing one fading out and the incoming one at full opacity.
@@ -91,6 +107,14 @@ assert.ok(Math.abs(getRobotCopyOpacity(0.68) - 1) < 1e-9)
 assert.equal(getRobotCopyOpacity(0.75), 1)
 assert.equal(getRobotCopyOpacity(0.82), 1)
 assert.equal(getRobotCopyOpacity(1), 1)
+
+assert.equal(getBikerRabbitCopyOpacity(0.82), 0)
+assert.ok(Math.abs(getBikerRabbitCopyOpacity(0.88) - 0.5) < 1e-9)
+assert.equal(getBikerRabbitCopyOpacity(0.94), 1)
+
+assert.equal(getPipiCopyOpacity(0.45), 0)
+assert.ok(Math.abs(getPipiCopyOpacity(0.51) - 0.5) < 1e-9)
+assert.ok(Math.abs(getPipiCopyOpacity(0.57) - 1) < 1e-9)
 
 assert.equal(getTownCopyOpacity(0), 1)
 assert.equal(getTownCopyOpacity(0.38), 1)

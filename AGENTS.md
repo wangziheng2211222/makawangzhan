@@ -26,7 +26,7 @@
 
 ## 关键机制
 - 双端资源：媒体查询 `(max-width: 800px)` 判定移动端（`lib/journey-media-query.ts`），加载对应视频
-- 预加载：首 2 段 fetch→blob→objectURL 后才放行加载屏；其余后台顺序下载；仅完全下载的段落可播放
+- 预加载：首 3 段 fetch→blob→objectURL 后才放行加载屏；其余后台顺序下载；仅完全下载的段落可播放
 - 微信适配：视频 muted + playsInline + x5-playsinline + x5-video-player-type="h5-page"；视口用 svh 单位；触摸手势 passive:false 控制滑动播放
 - 埋点：POST `/api/analytics/events` 仅接受 `business_cta_click`（source∈chapter/chooser/reunion + https destination + sessionId）
 

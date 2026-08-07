@@ -3,7 +3,6 @@
   height: calc(var(--journey-scroll-units) * 100vh + 100vh);
   height: calc(var(--journey-scroll-units) * 100svh + 100svh);
   background: var(--color-page);
-  --town-space-phase: 1;
 }
 
 @property --scene-action-beam-angle {
@@ -276,7 +275,7 @@
 
 .townCopy {
   top: auto;
-  bottom: clamp(118px, 14vh, 156px);
+  bottom: clamp(148px, 18vh, 196px);
   left: clamp(72px, 10vw, 160px);
   width: min(40vw, 520px);
   transform: translateY(var(--copy-shift, 0px));
@@ -334,6 +333,7 @@
 .copy.reunionCopy h2 {
   max-width: none;
   color: var(--color-white);
+  line-height: 1.14;
   text-shadow: 0 3px 24px rgb(2 8 28 / 45%);
   white-space: nowrap;
 }
@@ -359,7 +359,7 @@
   line-height: 1.2;
 }
 
-.copy h2 .titleLastCharacter {
+.copy .titleLastCharacter {
   display: inline-block;
   margin-left: 4px;
   transform: translateY(2px) rotate(-12deg);
@@ -371,23 +371,18 @@
 }
 
 .copy .townTitle {
-  display: grid;
-  width: min(40vw, 520px);
+  display: flex;
+  flex-direction: column;
+  width: max-content;
   max-width: none;
-  line-height: 0;
+  color: var(--color-white);
+  line-height: 1.06;
+  text-shadow: 0 3px 24px rgb(2 8 28 / 52%);
 }
 
-.townWordmark {
+.townTitle span {
   display: block;
-  grid-area: 1 / 1;
-  align-self: center;
-  width: 100%;
-  height: auto;
-  transition: opacity 260ms ease;
-}
-
-.townWordmarkLight {
-  opacity: var(--town-space-phase);
+  white-space: nowrap;
 }
 
 .copy h2 {
@@ -429,6 +424,13 @@
   font-weight: 720;
   white-space: nowrap;
   transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.townCopy .sceneAction {
+  min-width: 132px;
+  min-height: 52px;
+  padding: 0 24px;
+  font-size: 15px;
 }
 
 .sceneAction::before {
@@ -486,6 +488,43 @@
   height: 16px;
   flex: 0 0 16px;
   animation: sceneActionSpinner 800ms linear infinite;
+}
+
+.townChoice {
+  position: absolute;
+  z-index: 7;
+  bottom: max(46px, calc(env(safe-area-inset-bottom) + 36px));
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: min(520px, calc(100vw - 48px));
+  transform: translateX(-50%);
+}
+
+.townChoice .sceneAction {
+  min-height: 48px;
+  margin: 0;
+}
+
+.townChoicePrimary {
+  min-width: 240px;
+}
+
+.townChoicePrimary::before {
+  animation-play-state: running;
+}
+
+.townChoiceSecondary {
+  --scene-action-fill: rgb(18 18 24 / 58%);
+
+  min-width: 108px;
+  color: rgb(255 255 255 / 86%);
+}
+
+.townChoiceSecondary::before {
+  display: none;
 }
 
 .chapterNav {
@@ -548,12 +587,6 @@
   font-weight: 780;
 }
 
-@media (min-width: 801px) {
-  .townCopy .sceneAction {
-    display: none;
-  }
-}
-
 @media (max-width: 980px) and (min-width: 801px) {
   .copy h1 {
     font-size: 58px;
@@ -606,7 +639,7 @@
   }
 
   .townCopy {
-    bottom: max(70px, calc(env(safe-area-inset-bottom) + 58px));
+    bottom: max(96px, calc(env(safe-area-inset-bottom) + 84px));
     left: 20px;
   }
 
@@ -621,7 +654,7 @@
 
   .copy.reunionCopy h2 {
     font-size: 36px;
-    line-height: 1.18;
+    line-height: 1.24;
   }
 
   .copy::before {
@@ -658,9 +691,10 @@
   }
 
   .copy .townTitle {
-    width: min(78vw, 360px);
-    max-width: none;
-    line-height: 0;
+    width: max-content;
+    max-width: 100%;
+    font-size: 44px;
+    line-height: 1.08;
   }
 
   .copy h2 {
@@ -686,7 +720,22 @@
   }
 
   .townCopy .sceneAction {
-    margin-top: 28px;
+    width: 180px;
+    min-height: 54px;
+    margin-top: 24px;
+    font-size: 15px;
+  }
+
+  .townChoice {
+    flex-direction: column;
+    gap: 10px;
+    bottom: max(36px, calc(env(safe-area-inset-bottom) + 28px));
+  }
+
+  .townChoice .sceneAction {
+    width: min(240px, calc(100vw - 40px));
+    min-height: 48px;
+    margin: 0;
   }
 
   .chapterNav {
@@ -723,8 +772,10 @@
   }
 
   .copy .townTitle {
-    width: min(40vw, 360px);
+    width: max-content;
     max-width: 100%;
+    font-size: 34px;
+    line-height: 1.08;
   }
 
   .copy h2 {

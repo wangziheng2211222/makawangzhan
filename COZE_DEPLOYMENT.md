@@ -6,25 +6,26 @@
 
 - 技术栈：Next.js 16、React 19、TypeScript。
 - 运行模式：Node.js 服务，不能按纯静态站点部署。
-- Node.js 版本：`>= 20.9.0`，推荐使用 Node.js 22 LTS。
-- 安装命令：`npm ci`。
-- 构建命令：`npm run build`。
-- 启动命令：`npm run start -- --hostname 0.0.0.0 --port $PORT`。
+- Node.js 版本：`.coze` 使用 `nodejs-24`（Next.js 最低要求 `>= 20.9.0`）。
+- 包管理器：仅使用 `pnpm`，禁止使用 npm/yarn。
+- 构建命令：`pnpm run build:preview`（脚本内部安装依赖后执行生产构建）。
+- 启动命令：`pnpm run start`（脚本内部读取 `DEPLOY_RUN_PORT`，其次回退到 `PORT`）。
 - 健康检查路径：`/`。
 - 当前 Git 分支：部署时选择包含目标版本的分支；本项目当前开发分支为 `v2`。
 
-项目的 `public` 目录当前约 159 MB，其中视频约 145 MB。桌面端和移动端各有 11 段旅程视频及 1 段结尾循环视频，共 24 个 MP4 文件。部署平台必须允许上传这些静态资源。
+Git 已跟踪的 `public` 资源当前约 123 MiB，其中媒体约 111 MiB。桌面端和移动端各有 11 段旅程视频及 1 段结尾循环视频，共 24 个 MP4 文件。部署平台必须允许上传这些静态资源。
 
 ## 2. 部署前检查
 
 在本地项目根目录执行：
 
 ```bash
-npm ci
-npm run typecheck
-npm run lint
-npm run test:journey
-npm run build
+pnpm install
+pnpm run typecheck
+pnpm run lint
+pnpm run test:journey
+pnpm run test:story-scenes
+pnpm run build
 ```
 
 以上命令全部成功后再部署。
@@ -46,10 +47,10 @@ du -sh public public/media
 2. 选择“从 Git 仓库导入”，关联当前网站仓库。
 3. 选择需要发布的分支，确认最新提交已推送。
 4. 项目根目录选择仓库根目录，不要选择 `app`、`public` 或其他子目录。
-5. 运行环境选择 Node.js 22；最低不能低于 Node.js 20.9。
-6. 安装命令填写 `npm ci`。
-7. 构建命令填写 `npm run build`。
-8. 启动命令填写 `npm run start -- --hostname 0.0.0.0 --port $PORT`。
+5. 运行环境选择 Node.js 24；最低不能低于 Node.js 20.9。
+6. 使用 pnpm 安装依赖，禁止切换到 npm/yarn。
+7. 构建配置使用纯命令数组 `["pnpm", "run", "build:preview"]`。
+8. 启动配置使用纯命令数组 `["pnpm", "run", "start"]`；不要用 `bash -c` 包裹命令，也不要硬编码端口。
 9. 健康检查路径填写 `/`。
 10. 配置环境变量后发起部署。
 
@@ -109,7 +110,7 @@ https://你的域名/admin/analytics
 
 ## 6. 视频与 CDN 要求
 
-首页会先加载当前设备对应的前 8 段视频，进入页面后继续加载剩余 3 段和结尾循环视频。为保证视频拖动和加载进度正常，静态文件或外部 CDN 应满足：
+首页会先加载当前设备对应的前 3 段视频，进入页面后按需加载后续视频。为保证视频拖动和加载进度正常，静态文件或外部 CDN 应满足：
 
 - `Content-Type: video/mp4`。
 - 返回准确的 `Content-Length`。
@@ -157,8 +158,8 @@ curl -I "$SITE_URL/media/journey/mobile/dive-town.mp4"
 
 ```text
 /images/brand/maka-planet-logo-white-cn.png
-/images/scenes/story/desktop/dive-town.webp
-/images/scenes/story/mobile/dive-town.webp
+/images/scenes/journey-posters/desktop/dive-town.jpg
+/images/scenes/journey-posters/mobile/dive-town.jpg
 /media/journey/desktop/dive-town.mp4
 /media/journey/mobile/dive-town.mp4
 /media/journey/desktop/reunion-loop.mp4
@@ -194,8 +195,8 @@ curl -i "$SITE_URL/api/analytics/stats" \
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
-| 构建提示 Node.js 版本不支持 | 运行环境低于 20.9 | 切换到 Node.js 22 后重新构建。 |
-| 上传或构建阶段提示包体过大 | `public` 约 159 MB | 将 MP4 迁移到对象存储/CDN，并配置 `NEXT_PUBLIC_MEDIA_*`。 |
+| 构建提示 Node.js 版本不支持 | 运行环境低于 20.9 | 切换到项目 `.coze` 配置的 Node.js 24 后重新构建。 |
+| 上传或构建阶段提示包体过大 | Git 已跟踪的 `public` 约 123 MiB | 将 MP4 迁移到对象存储/CDN，并配置 `NEXT_PUBLIC_MEDIA_*`。 |
 | 首页能打开但视频全部 404 | 静态视频未进入发布产物 | 检查 24 个 MP4 是否已提交、平台是否忽略大文件。 |
 | 加载进度长时间不动 | CDN 不返回 `Content-Length` 或缓冲响应 | 检查视频响应头，关闭缓冲，或采用媒体大小清单。 |
 | 约 15 秒后直接进入但仍显示海报 | 首批视频未在兜底时间内完成 | 检查 CDN 带宽、缓存和视频请求状态。 |

@@ -41,6 +41,14 @@ export function getRobotCopyOpacity(progress: number) {
   return clamp((progress - 0.05) / 0.1)
 }
 
+export function getBikerRabbitCopyOpacity(progress: number) {
+  return clamp((progress - 0.82) / 0.12)
+}
+
+export function getPipiCopyOpacity(progress: number) {
+  return clamp((progress - 0.45) / 0.12)
+}
+
 export function lingerEase(progress: number, linger = 0) {
   const amount = clamp(linger)
   const centered = clamp(progress) - 0.5

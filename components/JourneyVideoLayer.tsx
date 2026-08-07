@@ -13,7 +13,7 @@ import type { JourneyMediaSegment } from '@/types/robot'
 import styles from './TownJourney.module.css'
 
 const allowBlobFallback = process.env.NEXT_PUBLIC_VIDEO_BLOB_FALLBACK === 'true'
-const INITIAL_PRELOAD_COUNT = 2
+const INITIAL_PRELOAD_COUNT = 3
 const INITIAL_PRELOAD_TIMEOUT_MS = 30_000
 const MINIMUM_PRELOAD_DISPLAY_MS = 2500
 
@@ -29,7 +29,7 @@ type JourneyVideoLayerProps = {
   activeSegmentIndex: number
   eagerSegmentIndex?: number | null
   mobile?: boolean | null
-  reducedMotion: boolean
+  reducedMotion: boolean | null
   registerVideo: (segmentId: string, video: HTMLVideoElement | null) => void
   registerAmbientVideo: (video: HTMLVideoElement | null) => void
   onVideoTimingChange: () => void
@@ -242,11 +242,11 @@ export function JourneyVideoLayer({
     sources: Record<string, string>
   }>({ mobile: null, sources: {} })
   useEffect(() => {
-    if (reducedMotion) {
+    if (reducedMotion === true) {
       onPreloadStateChange({ progress: 1, ready: true })
       return
     }
-    if (mobile === null) return
+    if (reducedMotion !== false || mobile === null) return
 
     let cancelled = false
     let minimumDelayId: number | undefined
@@ -391,7 +391,7 @@ export function JourneyVideoLayer({
     ? preloadedMedia.sources
     : {}
 
-  if (reducedMotion || mobile === null || !initialPreloadReady) return null
+  if (reducedMotion !== false || mobile === null || !initialPreloadReady) return null
 
   return (
     <div className={styles.videoStack} aria-hidden="true">

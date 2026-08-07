@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { LoaderCircle } from 'lucide-react'
+import { ArrowRight, LoaderCircle } from 'lucide-react'
 import {
   type CSSProperties,
   type RefCallback,
@@ -22,7 +22,9 @@ import {
   buildSegmentTimeline,
   clamp,
   findConnectorSegmentIndex,
+  getBikerRabbitCopyOpacity,
   getJourneyFrame,
+  getPipiCopyOpacity,
   getRobotCopyOpacity,
   getTownCopyOpacity,
 } from '@/lib/journey-timeline'
@@ -81,6 +83,7 @@ const NEXT_SEGMENT_EAGER_THRESHOLD = 0.72
 const MOBILE_SWIPE_THRESHOLD_PX = 44
 const WHEEL_GESTURE_IDLE_MS = 180
 const SEGMENT_BOUNDARY_ADVANCE_PX = 2
+const PLAYBACK_START_FALLBACK_MS = 100
 const LOADING_VISUAL_INITIAL_PROGRESS = 0.03
 const LOADING_VISUAL_PROGRESS_CAP = 0.9
 const LOADING_PROGRESS_READY_CAP = 0.96
@@ -97,20 +100,20 @@ const WORLD_INTRO_CUES: Partial<Record<JourneyMediaSegment['id'], readonly World
     {
       id: 'town-welcome',
       lines: ['欢迎来到玛卡小镇。'],
-      startsAt: 0.34,
-      endsAt: 0.67,
+      startsAt: 0.56,
+      endsAt: 0.82,
     },
     {
-      id: 'quiet-town',
-      lines: ['玛卡小镇本来安安静静的。'],
-      startsAt: 0.74,
+      id: 'town-recruitment',
+      lines: ['这里正在招募小镇居民。'],
+      startsAt: 0.84,
       endsAt: 0.98,
     },
   ],
   'connector-town-to-jiuka': [
     {
       id: 'shimmer-arrives',
-      lines: ['直到一颗亮晶晶的碎片，', '飞了进来。'],
+      lines: ['那就先去找，', '最容易迷路的那一位。'],
       startsAt: 0.04,
       endsAt: 0.3,
     },
@@ -217,6 +220,21 @@ function getWorldIntroCue(
   return null
 }
 
+function trackResidentApplicationClick(
+  ctaId: string,
+  ctaLabel: string,
+  source: 'chapter' | 'chooser' | 'reunion',
+  robotId?: RobotProfile['id'],
+) {
+  trackEvent('business_cta_click', {
+    cta_id: ctaId,
+    cta_label: ctaLabel,
+    robot_id: robotId,
+    source,
+    destination: RESIDENT_APPLICATION_URL,
+  })
+}
+
 export function TownJourney({
   chapters,
   segments,
@@ -227,6 +245,7 @@ export function TownJourney({
   const [eagerSegmentIndex, setEagerSegmentIndex] = useState<number | null>(null)
   const [hasPassedFirstViewport, setHasPassedFirstViewport] = useState(false)
   const [hasEnteredTown, setHasEnteredTown] = useState(false)
+  const [showTownChoice, setShowTownChoice] = useState(false)
   const [mobile, setMobile] = useState<boolean | null>(null)
   const [reducedMotion, setReducedMotion] = useState<boolean | null>(null)
   const [displayedPreloadProgress, setDisplayedPreloadProgress] = useState(
@@ -267,6 +286,15 @@ export function TownJourney({
   const actualPreloadProgressRef = useRef(0)
   const segmentTimeline = useMemo(() => buildSegmentTimeline(segments), [segments])
   const totalScrollWeight = segmentTimeline.totalWeight
+  const townConnectorIndex = findConnectorSegmentIndex(segments, 0)
+  const initialVideo = videoRefs.current.get(segments[0]?.id)
+  const initialVideoReady = reducedMotion === true || Boolean(
+    initialVideo
+    && (initialVideo.readyState >= 2 || initialVideo.dataset.failed === 'true'),
+  )
+  const loadingVisualReady = initialMediaReady
+    && initialVideoReady
+    && (reducedMotion === true || loadedInitialPosterMode === mobile)
 
   useLayoutEffect(() => {
     if ('scrollRestoration' in window.history) {
@@ -382,6 +410,9 @@ export function TownJourney({
     const journeyFrame = getJourneyFrame(progress, segments, chapters.length)
     const segment = segments[journeyFrame.activeSegmentIndex]
     const chapter = chapters[journeyFrame.activeChapterIndex]
+    const activeSegmentFrame = journeyFrame.segments.find(
+      (frame) => frame.index === journeyFrame.activeSegmentIndex,
+    )
     const nextEagerSegmentIndex = journeyFrame.localProgress >= NEXT_SEGMENT_EAGER_THRESHOLD
       && journeyFrame.activeSegmentIndex < segments.length - 1
       ? journeyFrame.activeSegmentIndex + 1
@@ -396,13 +427,7 @@ export function TownJourney({
       worldIntroCueIdRef.current = nextWorldIntroCueId
       setWorldIntroCue(nextWorldIntroCue)
     }
-    const townFrame = journeyFrame.segments.find((frame) => frame.id === 'dive-town')
-    const spacePhase = townFrame
-      ? 1 - clamp((townFrame.mediaProgress - 0.34) / 0.08)
-      : 0
-
     journey.style.setProperty('--segment-progress', journeyFrame.localProgress.toFixed(4))
-    journey.style.setProperty('--town-space-phase', spacePhase.toFixed(4))
     const mobileBoundary = progress <= SCRUB_EPSILON
       ? 'start'
       : progress >= 1 - SCRUB_EPSILON
@@ -491,6 +516,15 @@ export function TownJourney({
       }
     }
 
+    const playbackVideo = segmentPlaybackRef.current?.segmentId === segment.id
+      ? segmentPlaybackRef.current.video
+      : null
+    const playbackMediaProgress = playbackVideo
+      && Number.isFinite(playbackVideo.duration)
+      && playbackVideo.duration > 0
+      ? clamp(playbackVideo.currentTime / playbackVideo.duration)
+      : null
+
     journeyFrame.chapters.forEach((chapterFrame, index) => {
       const scene = sceneRefs.current[index]
       if (!scene) return
@@ -505,13 +539,17 @@ export function TownJourney({
       if (index === 0) {
         copyOpacity = chapterFrame.opacity * getTownCopyOpacity(chapterFrame.progress)
       } else if (isRobotChapter) {
-        const showsCopyDuringPlayback = chapters[index].id === 'jiuka'
-          || chapters[index].id === 'little-devil'
-        const waitsForRobotVideo = isActiveRobotDive
-          && segmentPlaybackRef.current?.segmentId === segment.id
-          && !showsCopyDuringPlayback
-        copyOpacity = isActiveRobotDive && !waitsForRobotVideo
-          ? chapterFrame.opacity * getRobotCopyOpacity(chapterFrame.progress)
+        const isPipi = chapters[index].id === 'pipi'
+        const robotProgress = isPipi && playbackMediaProgress !== null
+          ? playbackMediaProgress
+          : activeSegmentFrame?.mediaProgress ?? chapterFrame.progress
+        const robotCopyOpacity = isPipi
+          ? getPipiCopyOpacity(robotProgress)
+          : chapters[index].id === 'biker-rabbit'
+            ? getBikerRabbitCopyOpacity(robotProgress)
+            : getRobotCopyOpacity(robotProgress)
+        copyOpacity = isActiveRobotDive
+          ? chapterFrame.opacity * robotCopyOpacity
           : 0
       } else if (chapters[index].id === 'reunion') {
         copyOpacity = segment.id === 'dive-reunion'
@@ -646,8 +684,6 @@ export function TownJourney({
   }, [initialMediaReady, showLoadingScreen])
 
   useEffect(() => {
-    const loadingVisualReady = initialMediaReady
-      && (reducedMotion === true || loadedInitialPosterMode === mobile)
     if (loadingVisualReady || !showLoadingScreen) return
 
     const root = document.documentElement
@@ -661,15 +697,56 @@ export function TownJourney({
       root.style.overflow = previousRootOverflow
       body.style.overflow = previousBodyOverflow
     }
-  }, [initialMediaReady, loadedInitialPosterMode, mobile, reducedMotion, showLoadingScreen])
+  }, [loadingVisualReady, showLoadingScreen])
 
   useEffect(() => {
-    const loadingVisualReady = initialMediaReady
-      && (reducedMotion === true || loadedInitialPosterMode === mobile)
+    if (!showTownChoice) return
+
+    const lockedScrollX = window.scrollX
+    const lockedScrollY = window.scrollY
+    const keepChoiceInView = () => {
+      if (
+        Math.abs(window.scrollX - lockedScrollX) < 0.5
+        && Math.abs(window.scrollY - lockedScrollY) < 0.5
+      ) return
+
+      window.scrollTo({
+        left: lockedScrollX,
+        top: lockedScrollY,
+        behavior: 'auto',
+      })
+    }
+    const preventKeyboardScroll = (event: KeyboardEvent) => {
+      const target = event.target
+      const isTextInput = target instanceof Element
+        && Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+      const activatesControl = (event.key === ' ' || event.key === 'Enter')
+        && target instanceof Element
+        && Boolean(target.closest('a, button'))
+      if (isTextInput || activatesControl) return
+
+      if (
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End', ' ']
+          .includes(event.key)
+      ) {
+        event.preventDefault()
+      }
+    }
+
+    window.addEventListener('scroll', keepChoiceInView)
+    window.addEventListener('keydown', preventKeyboardScroll)
+
+    return () => {
+      window.removeEventListener('scroll', keepChoiceInView)
+      window.removeEventListener('keydown', preventKeyboardScroll)
+    }
+  }, [showTownChoice])
+
+  useEffect(() => {
     if (!loadingVisualReady) return
     const timer = window.setTimeout(() => setShowLoadingScreen(false), 520)
     return () => window.clearTimeout(timer)
-  }, [initialMediaReady, loadedInitialPosterMode, mobile, reducedMotion])
+  }, [loadingVisualReady])
 
   useEffect(() => {
     const journey = journeyRef.current
@@ -759,15 +836,21 @@ export function TownJourney({
 
       // --- Define closures before creating the playback object ---
       let manualFrameId: number | null = null
-      let playbackMonitoring = false
+      let renderFrameId: number | null = null
+      let manualPlaybackActive = false
+      let nativePlaybackStartedAt: number | null = null
+      let nativePlaybackStartTime = 0
 
       const startManualPlayback = () => {
         if (segmentPlaybackRef.current !== playback) return
-        if (manualFrameId !== null) return // already in manual mode
+        if (manualPlaybackActive) return
+        manualPlaybackActive = true
+        video.dataset.manualPlayback = 'true'
+        video.pause()
         let lastTick = performance.now()
         const tick = (ts: number) => {
           if (segmentPlaybackRef.current !== playback) return
-          const delta = (ts - lastTick) / 1000
+          const delta = Math.min((ts - lastTick) / 1000, 0.1)
           lastTick = ts
           const duration = video.duration
           if (Number.isFinite(duration) && duration > 0) {
@@ -777,7 +860,6 @@ export function TownJourney({
             } catch {
               // ignore seek errors
             }
-            updatePlayback()
             if (newTime >= duration - SCRUB_EPSILON) {
               finishPlayback()
               return
@@ -802,13 +884,30 @@ export function TownJourney({
         renderJourneyFrame(progress)
       }
 
+      const renderPlaybackFrame = (timestamp: number) => {
+        if (segmentPlaybackRef.current !== playback) return
+        if (!manualPlaybackActive && nativePlaybackStartedAt !== null) {
+          if (video.currentTime > nativePlaybackStartTime + SCRUB_EPSILON) {
+            nativePlaybackStartedAt = null
+          } else if (timestamp - nativePlaybackStartedAt >= PLAYBACK_START_FALLBACK_MS) {
+            startManualPlayback()
+          }
+        }
+        updatePlayback()
+        renderFrameId = window.requestAnimationFrame(renderPlaybackFrame)
+      }
+
       const cleanup = () => {
-        video.removeEventListener('timeupdate', updatePlayback)
+        delete video.dataset.manualPlayback
         video.removeEventListener('ended', finishPlayback)
         video.removeEventListener('pause', finishPlaybackFromPause)
         video.removeEventListener('error', failPlayback)
         video.removeEventListener('abort', failPlayback)
         video.removeEventListener('emptied', failPlayback)
+        if (renderFrameId !== null) {
+          window.cancelAnimationFrame(renderFrameId)
+          renderFrameId = null
+        }
         if (manualFrameId !== null) {
           window.cancelAnimationFrame(manualFrameId)
           manualFrameId = null
@@ -825,6 +924,9 @@ export function TownJourney({
           && entry.index < sequenceEndIndex
           && Boolean(nextEntry)
         const reachedSequenceEnd = sequenceEndIndex === entry.index
+        if (reachedSequenceEnd && entry.index === townConnectorIndex - 1) {
+          setShowTownChoice(true)
+        }
         const waitsForAction = reachedSequenceEnd
           || (!hasSequenceNext && entry.kind === 'dive-in' && Boolean(nextEntry))
         const nextEntryReady = !nextEntry || fullyLoadedSegmentKeysRef.current.has(
@@ -881,6 +983,7 @@ export function TownJourney({
         if (
           segmentPlaybackRef.current !== playback
           || document.hidden
+          || manualPlaybackActive
           || !shouldResumeJourneyVideoPlayback(video)
         ) return
         video.play().catch(failPlayback)
@@ -888,6 +991,7 @@ export function TownJourney({
 
       const finishPlaybackFromPause = () => {
         if (segmentPlaybackRef.current !== playback) return
+        if (manualPlaybackActive) return
         if (hasCompletedJourneyVideoPlayback(video)) {
           finishPlayback()
           return
@@ -917,31 +1021,17 @@ export function TownJourney({
       renderJourneyFrame(startProgress)
 
       // --- Attach event listeners and start playback ---
-      video.addEventListener('timeupdate', updatePlayback)
       video.addEventListener('ended', finishPlayback, { once: true })
       video.addEventListener('pause', finishPlaybackFromPause)
       video.addEventListener('error', failPlayback, { once: true })
       video.addEventListener('abort', failPlayback, { once: true })
       video.addEventListener('emptied', failPlayback, { once: true })
+      renderFrameId = window.requestAnimationFrame(renderPlaybackFrame)
 
       try {
+        nativePlaybackStartTime = video.currentTime
+        nativePlaybackStartedAt = performance.now()
         const playbackPromise = video.play()
-
-        // Monitor whether the video actually starts advancing. Some in-app
-        // browsers (DingTalk, certain WebView versions) resolve play() without
-        // error but the video never fires timeupdate — the frame is frozen.
-        // If no timeupdate fires within 600ms, fall back to manual playback
-        // which advances currentTime via requestAnimationFrame.
-        const onMonitoredTimeUpdate = () => {
-          playbackMonitoring = true
-        }
-        video.addEventListener('timeupdate', onMonitoredTimeUpdate, { once: true })
-        window.setTimeout(() => {
-          if (segmentPlaybackRef.current !== playback) return
-          if (playbackMonitoring) return
-          // Video didn't start advancing — switch to manual playback.
-          startManualPlayback()
-        }, 600)
 
         window.setTimeout(resumeInterruptedPlayback, 250)
         if (playbackPromise) {
@@ -970,6 +1060,7 @@ export function TownJourney({
       requestJourneyUpdate,
       segmentTimeline,
       setJourneyProgress,
+      townConnectorIndex,
       totalScrollWeight,
     ],
   )
@@ -1012,14 +1103,27 @@ export function TownJourney({
   )
 
   const startTownEntrySequence = useCallback(() => {
-    const firstRobotIndex = segmentTimeline.entries.findIndex(
-      (entry) => entry.kind === 'dive-in' && entry.chapterIndex === 1,
-    )
-    if (firstRobotIndex < 0) return false
+    if (townConnectorIndex <= 0) return false
 
     setHasEnteredTown(true)
-    return startSegmentPlayback(0, firstRobotIndex)
-  }, [segmentTimeline.entries, startSegmentPlayback])
+    setShowTownChoice(false)
+    return startSegmentPlayback(0, townConnectorIndex - 1)
+  }, [startSegmentPlayback, townConnectorIndex])
+
+  const meetMakaSpirits = useCallback(() => {
+    if (townConnectorIndex < 0) return
+
+    setShowTownChoice(false)
+    trackEvent('journey_meet_spirits_click')
+    if (reducedMotion === true) {
+      window.requestAnimationFrame(() => {
+        sceneRefs.current[1]?.scrollIntoView({ behavior: 'auto', block: 'start' })
+      })
+      return
+    }
+
+    startSegmentPlayback(townConnectorIndex)
+  }, [reducedMotion, startSegmentPlayback, townConnectorIndex])
 
   const playNextChapter = useCallback(
     (chapterIndex: number, robotId: RobotProfile['id']) => {
@@ -1051,7 +1155,8 @@ export function TownJourney({
   const enterTown = useCallback(() => {
     trackEvent('journey_enter_town_click')
     if (reducedMotion === true) {
-      sceneRefs.current[1]?.scrollIntoView({ behavior: 'auto', block: 'start' })
+      setHasEnteredTown(true)
+      setShowTownChoice(true)
       return
     }
 
@@ -1061,6 +1166,7 @@ export function TownJourney({
   const playJourneySegment = useCallback(
     (direction: 1 | -1) => {
       if (mobile === null || reducedMotion !== false) return false
+      if (showTownChoice) return true
 
       const currentPlayback = segmentPlaybackRef.current
       if (currentPlayback) {
@@ -1103,6 +1209,7 @@ export function TownJourney({
       segmentTimeline.entries,
       segments,
       setJourneyProgress,
+      showTownChoice,
       startTownEntrySequence,
       totalScrollWeight,
     ],
@@ -1276,6 +1383,7 @@ export function TownJourney({
         return
       }
 
+      if (playback.video.dataset.manualPlayback === 'true') return
       if (shouldResumeJourneyVideoPlayback(playback.video)) {
         playback.video.play().catch(() => undefined)
       }
@@ -1401,13 +1509,11 @@ export function TownJourney({
     ? activeIndex > 0
     : hasPassedFirstViewport
   const isChapterNavVisible = canShowChapterNav
+    && !showTownChoice
     && chapters[activeIndex].id !== 'reunion'
   const visibleWorldIntroCue = mobile === true && hasEnteredTown
     ? worldIntroCue
     : undefined
-  const loadingVisualReady = initialMediaReady
-    && (reducedMotion === true || loadedInitialPosterMode === mobile)
-
   return (
     <section
       id="town-journey"
@@ -1447,7 +1553,7 @@ export function TownJourney({
           activeSegmentIndex={activeSegmentIndex}
           eagerSegmentIndex={eagerSegmentIndex}
           mobile={mobile}
-          reducedMotion={reducedMotion !== false}
+          reducedMotion={reducedMotion}
           registerVideo={registerVideo}
           registerAmbientVideo={registerAmbientVideo}
           onVideoTimingChange={handleVideoTimingChange}
@@ -1489,18 +1595,17 @@ export function TownJourney({
                 >
                   {index === 0 ? (
                     <>
-                      {mobile !== true || !hasEnteredTown ? (
-                        <h1 className={styles.townTitle} tabIndex={-1}>
-                          <Image
-                            className={`${styles.townWordmark} ${styles.townWordmarkLight}`}
-                            src="/images/brand/maka-planet-logo-white-cn.png"
-                            alt=""
-                            aria-hidden="true"
-                            width={2584}
-                            height={807}
-                            priority
-                          />
-                          <span className="srOnly">{chapter.title}</span>
+                      {!hasEnteredTown ? (
+                        <h1
+                          className={styles.townTitle}
+                          aria-label="玛卡小镇原住民招募"
+                          tabIndex={-1}
+                        >
+                          <span>
+                            玛卡小
+                            <span className={styles.titleLastCharacter}>镇</span>
+                          </span>
+                          <span>原住民招募</span>
                         </h1>
                       ) : null}
                       {activeSegmentIndex === 0 && !hasEnteredTown ? (
@@ -1538,7 +1643,25 @@ export function TownJourney({
                   ) : chapter.description ? (
                     <p className={styles.description}>{chapter.description}</p>
                   ) : null}
-                  {robot ? (
+                  {chapter.id === 'pipi' ? (
+                    <a
+                      className={styles.sceneAction}
+                      href={RESIDENT_APPLICATION_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="立即报名成为玛卡小镇居民"
+                      onClick={() => {
+                        trackResidentApplicationClick(
+                          'pipi_resident_application',
+                          '立即报名',
+                          'chapter',
+                          'pipi',
+                        )
+                      }}
+                    >
+                      立即报名
+                    </a>
+                  ) : robot ? (
                     <button
                       type="button"
                       className={styles.sceneAction}
@@ -1547,7 +1670,7 @@ export function TownJourney({
                       disabled={!nextChapterReady}
                       onClick={() => playNextChapter(index, robot.id)}
                     >
-                      <span>下一章</span>
+                      <span>下一个</span>
                       {!nextChapterReady ? (
                         <LoaderCircle
                           className={styles.sceneActionSpinner}
@@ -1566,12 +1689,11 @@ export function TownJourney({
                       rel="noopener noreferrer"
                       aria-label="申请成为玛卡小镇居民"
                       onClick={() => {
-                        trackEvent('business_cta_click', {
-                          cta_id: 'reunion_resident_application',
-                          cta_label: '我要申请',
-                          source: 'reunion',
-                          destination: RESIDENT_APPLICATION_URL,
-                        })
+                        trackResidentApplicationClick(
+                          'reunion_resident_application',
+                          '我要申请',
+                          'reunion',
+                        )
                       }}
                     >
                       我要申请
@@ -1582,6 +1704,34 @@ export function TownJourney({
             )
           })}
         </div>
+
+        {showTownChoice ? (
+          <div className={styles.townChoice} role="group" aria-label="玛卡精灵介绍选择">
+            <button
+              type="button"
+              className={`${styles.sceneAction} ${styles.townChoicePrimary}`}
+              onClick={meetMakaSpirits}
+            >
+              <span>去见见他们</span>
+              <ArrowRight size={18} strokeWidth={2} aria-hidden="true" />
+            </button>
+            <a
+              className={`${styles.sceneAction} ${styles.townChoiceSecondary}`}
+              href={RESIDENT_APPLICATION_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                trackResidentApplicationClick(
+                  'town_skip_to_application',
+                  '直接报名',
+                  'chooser',
+                )
+              }}
+            >
+              直接报名
+            </a>
+          </div>
+        ) : null}
 
         {showLoadingScreen ? (
           <div
